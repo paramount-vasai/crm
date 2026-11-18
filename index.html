@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Paramount CRM v53</title>
+<title>Paramount CRM v55</title>
 <style>
 :root{--bg:#f3f5f9;--card:#fff;--ink:#1b2430;--mute:#6b7685;--line:#e2e7ef;--pri:#123b6b;--acc:#1f8a4c;--warn:#c0392b;--chip:#e8eef6}
 *{box-sizing:border-box}
@@ -244,16 +244,21 @@ function render(){
       ${tab==="fu"&&fuHeld(i)?`<div class="sum" style="background:#d9f2e3">✅ Follow-up ho gaya · ${Math.max(1,Math.ceil((i.fuHold-Date.now())/60000))} min mein "${esc(fName2(i.folder))}" mein chali jayegi (abhi call kar sakte ho)</div>`:""}${tab==="fu"&&i.phone?`<div class="btns"><a class="wa" style="padding:10px 14px;font-size:15px" target="_blank" rel="noopener" href="${waLink(i.phone,fuText(i))}" data-fu="${i.id}">📤 Follow-up bhejo</a>${(i.quotes||[]).length?`<button data-fq="${i.id}">📎 Quotation PDF bhi bhejo</button>`:""}<button data-fs="${i.id}">⏭ 10 din baad</button></div><div class="meta">${(i.fuCount||0)?"Ab tak "+i.fuCount+" follow-up gaye":"Pehla follow-up"}</div>`:""}
       <div class="btns">
         ${i.phone?`<a class="call" href="tel:${esc(i.phone)}" data-call="${i.id}">📞 Call</a><a class="wa" target="_blank" rel="noopener" href="${waLink(i.phone)}" data-wa="${i.id}">WhatsApp</a>`:""}
-        <button data-open="${i.id}">Khologe</button>
+        <button data-open="${i.id}">Khologe</button>${i.folder!=="deleted"?`<button data-qj="${i.id}" style="background:#ffe082;color:#5a3d00">📎 Quotation jodo</button>`:""}
         ${i.folder!=="deleted"?`<button class="p" data-q="${i.id}">📄 Quotation</button><button data-sq="${i.id}" style="background:#6b2fb3;color:#fff">✨ Special</button>${i.size&&i.prod&&i.prod!=="common"?`<button class="g" data-qq="${i.id}">⚡ ${esc(i.size)} BPM ${({water:"Water",csd:"Soda",juice:"Juice"})[i.prod]||""} quotation</button>`:""}`:""}${!i.phone?`<button data-ph="${i.id}">📞 Number jodo</button>`:""}
         ${i.phone?`<button data-vid="${i.id}">🎥 Video</button>`:""}
       </div>
       <div class="mini"><select data-sz="${i.id}"><option value="">Size?</option>${SIZES.map(([k,n])=>`<option value="${k}" ${i.size===k?"selected":""}>${n}</option>`).join("")}</select>
         <select data-pr="${i.id}"><option value="">Product?</option>${PRODS.map(([k,n])=>`<option value="${k}" ${i.prod===k?"selected":""}>${n}</option>`).join("")}</select></div>
+      ${(i.quotes||[]).length?`<div class="btns" style="margin-top:4px">${i.quotes.map((q,k)=>`<button data-qd="${i.id}|${k}" style="background:#fff3cd;color:#5a3d00;font-size:12px;padding:4px 8px">📄 ${esc(String(q.name).slice(0,22))} ⬇</button>`).join("")}</div>`:""}
       ${i.folder!=="deleted"?`<div class="btns" style="margin-top:6px">${(ROUTES[i.folder]||["deleted"]).map(f=>`<button class="${f==="confirm"?"g":f==="deleted"?"r":""}" data-mv="${i.id}|${f}">${MVL[f]}</button>`).join("")}</div>`:`<div class="btns" style="margin-top:6px"><button data-mv="${i.id}|${i.delFrom&&i.delFrom!=="deleted"?i.delFrom:"inquiry"}">↩ Wapas lao (${esc(fName2(i.delFrom&&i.delFrom!=="deleted"?i.delFrom:"inquiry"))})</button><button class="r" data-px="${i.id}">❌ Hamesha ke liye delete</button></div>`}
       <div>
       </div></div>`}).join("");
   document.querySelectorAll("[data-open]").forEach(b=>b.onclick=()=>openDetail(b.dataset.open));
+document.querySelectorAll("[data-qj]").forEach(b=>b.onclick=()=>{openDetail(b.dataset.qj);const f=$("qFile");if(f)f.click();});
+document.querySelectorAll("[data-qd]").forEach(b=>b.onclick=()=>{const[id,k]=b.dataset.qd.split("|"),it=byId(id),q=it&&(it.quotes||[])[Number(k)];if(!q)return;fileBlob(q).then(bl=>{if(!bl){toast("File is phone mein nahi mili");return;}const f=new File([bl],q.name,{type:q.type||"application/pdf"});
+  if(navigator.canShare&&navigator.canShare({files:[f]})&&confirm("OK = WhatsApp/Share pe bhejo\nCancel = Download karo")){navigator.share({files:[f],text:"Paramount Technology - Quotation"}).catch(()=>{});return;}
+  const u=URL.createObjectURL(f),a=document.createElement("a");a.href=u;a.download=q.name;document.body.appendChild(a);a.click();a.remove();toast("⬇ Download ho raha hai");});});
   document.querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>openQuote(b.dataset.q));
   document.querySelectorAll("[data-sq]").forEach(b=>b.onclick=()=>openSpecial(b.dataset.sq));
   document.querySelectorAll("[data-qq]").forEach(b=>b.onclick=()=>{const i=byId(b.dataset.qq);if(!i)return;openQuote(i.id);$("qText").value=i.size+" BPM "+({water:"water",csd:"soda",juice:"juice"})[i.prod]+" plant";$("qMake").click();});
@@ -406,7 +411,7 @@ function openAfterCall(id){const i=byId(id);if(!i)return;const P=S.pendCall||{id
   window.__acFinish=finish;
   const go=(mode,fn)=>{clearTimeout(tmr);apply();P.back=mode;save();$("mTd").classList.remove("on");delete $("tdSheet").dataset.ac;window.__acFinish=null;fn();};
   $("acDone").onclick=finish;
-  $("acDel").onclick=()=>{if(!confirm("Is party ko Delete folder mein daalna hai?"))return;sel="deleted";apply();finish();toast("🗑 Deleted folder mein gaya");};
+  $("acDel").onclick=()=>{sel="deleted";apply();finish();toast("🗑 Deleted folder mein gaya (galti hui to Deleted folder se ↩ Wapas lao)");};
   $("acQ").onclick=()=>go("quote",()=>openQuote(i.id));
   $("acSp").onclick=()=>go("quote",()=>openSpecial(i.id));
   $("acV").onclick=()=>go("wa",()=>sendVideos(i));
