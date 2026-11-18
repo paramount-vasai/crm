@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Paramount CRM v55</title>
+<title>Paramount CRM v56</title>
 <style>
 :root{--bg:#f3f5f9;--card:#fff;--ink:#1b2430;--mute:#6b7685;--line:#e2e7ef;--pri:#123b6b;--acc:#1f8a4c;--warn:#c0392b;--chip:#e8eef6}
 *{box-sizing:border-box}
@@ -121,7 +121,7 @@ const KEY="pt-crm-fresh-v3";
 const FOLDERS=[["inquiry","📥 Inquiry"],["nophone","📵 Phone nahi utha"],["baat","💬 Baat chal rahi"],["khud","📝 Khud ki Quotation"],["vdone","✅ Visit aa gayi"],["confirm","🎉 Order Confirm"],["spare","🔧 Spare parts"],["deleted","🗑 Deleted"]];
 /* har folder se kahan ja sakta hai */
 const ROUTES={inquiry:["nophone","baat","deleted"],nophone:["baat","khud","deleted"],baat:["nophone","khud","deleted"],khud:["vdone","confirm","deleted"],vdone:["confirm","deleted"],confirm:["deleted"],spare:["deleted"]};
-const MVL={nophone:"📵 Phone nahi utha",baat:"💬 Baat chal rahi",khud:"📝 Khud ki Quotation",vdone:"✅ Visit aa gayi",confirm:"🎉 Order Confirm",deleted:"🗑 Delete"};
+const MVL={spare:"🔧 Spare parts",nophone:"📵 Phone nahi utha",baat:"💬 Baat chal rahi",khud:"📝 Khud ki Quotation",vdone:"✅ Visit aa gayi",confirm:"🎉 Order Confirm",deleted:"🗑 Delete"};
 const OLDF={staff:"baat",later:"baat",tdate:"baat",maine:"baat",kal:"baat",fu10:"baat",fcall:"baat",important:"khud",jaldi:"khud",visit:"khud",kquote:"khud"};
 function qByOf(i){if(i.qBy)return i.qBy;const lq=(i.notes||[]).filter(n=>/Quotation/i.test(n.text||"")).slice(-1)[0];return lq?(/\(Staff\)\s*$|staff/i.test(lq.text||"")?"staff":"owner"):"";}
 function mapOld(i){const f=i.folder;if(f==="kquote"&&i.kqAt&&!i.talkOn){const d=new Date(Number(i.kqAt)),p=n=>String(n).padStart(2,"0");i.talkOn=d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate());}if(f==="quote")return qByOf(i)==="owner"?"khud":"baat";return OLDF[f]||f;}
@@ -251,7 +251,7 @@ function render(){
       <div class="mini"><select data-sz="${i.id}"><option value="">Size?</option>${SIZES.map(([k,n])=>`<option value="${k}" ${i.size===k?"selected":""}>${n}</option>`).join("")}</select>
         <select data-pr="${i.id}"><option value="">Product?</option>${PRODS.map(([k,n])=>`<option value="${k}" ${i.prod===k?"selected":""}>${n}</option>`).join("")}</select></div>
       ${(i.quotes||[]).length?`<div class="btns" style="margin-top:4px">${i.quotes.map((q,k)=>`<button data-qd="${i.id}|${k}" style="background:#fff3cd;color:#5a3d00;font-size:12px;padding:4px 8px">📄 ${esc(String(q.name).slice(0,22))} ⬇</button>`).join("")}</div>`:""}
-      ${i.folder!=="deleted"?`<div class="btns" style="margin-top:6px">${(ROUTES[i.folder]||["deleted"]).map(f=>`<button class="${f==="confirm"?"g":f==="deleted"?"r":""}" data-mv="${i.id}|${f}">${MVL[f]}</button>`).join("")}</div>`:`<div class="btns" style="margin-top:6px"><button data-mv="${i.id}|${i.delFrom&&i.delFrom!=="deleted"?i.delFrom:"inquiry"}">↩ Wapas lao (${esc(fName2(i.delFrom&&i.delFrom!=="deleted"?i.delFrom:"inquiry"))})</button><button class="r" data-px="${i.id}">❌ Hamesha ke liye delete</button></div>`}
+      ${i.folder!=="deleted"?`<div class="btns" style="margin-top:6px">${["nophone","baat","khud","vdone","confirm","spare","deleted"].filter(f=>f!==i.folder).map(f=>`<button class="${f==="confirm"?"g":f==="deleted"?"r":""}" data-mv="${i.id}|${f}">${MVL[f]}</button>`).join("")}</div>`:`<div class="btns" style="margin-top:6px"><button data-mv="${i.id}|${i.delFrom&&i.delFrom!=="deleted"?i.delFrom:"inquiry"}">↩ Wapas lao (${esc(fName2(i.delFrom&&i.delFrom!=="deleted"?i.delFrom:"inquiry"))})</button><button class="r" data-px="${i.id}">❌ Hamesha ke liye delete</button></div>`}
       <div>
       </div></div>`}).join("");
   document.querySelectorAll("[data-open]").forEach(b=>b.onclick=()=>openDetail(b.dataset.open));
@@ -455,7 +455,7 @@ function openDetail(id,isNew){
    <label>Naam</label><input id="dName" value="${esc(i.name)}">
    <label>Mobile</label><input id="dPhone" inputmode="tel" value="${esc(i.phone)}">
    <label>Message / zaroorat</label><textarea id="dMsg">${esc(i.message)}</textarea>
-   <div class="two"><div><label>Folder</label><select id="dFolder">${FOLDERS.filter(([k])=>isNew?["inquiry","nophone","baat","khud","spare"].includes(k):(k===i.folder||(ROUTES[i.folder]||[]).includes(k)||(i.folder==="deleted"&&k!=="confirm"))).map(([k,n])=>`<option value="${k}" ${i.folder===k?"selected":""}>${n}</option>`).join("")}</select></div>
+   <div class="two"><div><label>Folder</label><select id="dFolder">${FOLDERS.filter(([k])=>isNew?["inquiry","nophone","baat","khud","spare"].includes(k):(k!=="inquiry"||i.folder==="inquiry")).map(([k,n])=>`<option value="${k}" ${i.folder===k?"selected":""}>${n}</option>`).join("")}</select></div>
    <div><label>Reminder tareekh</label><input id="dRem" type="date" value="${esc(i.remind||"")}"></div></div>
    <div class="btns"><button class="p" id="dSave">Save karo</button><button id="dClose">Band karo</button>
      ${!isNew&&(ROUTES[i.folder]||[]).includes("confirm")?'<button class="g" id="dConf">✅ Order Confirm</button>':""}
