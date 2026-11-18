@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Paramount CRM v56</title>
+<title>Paramount CRM v57</title>
 <style>
 :root{--bg:#f3f5f9;--card:#fff;--ink:#1b2430;--mute:#6b7685;--line:#e2e7ef;--pri:#123b6b;--acc:#1f8a4c;--warn:#c0392b;--chip:#e8eef6}
 *{box-sizing:border-box}
@@ -239,6 +239,7 @@ function render(){
       ${DATE_ASK.includes(i.folder)&&i.talkNote?`<div class="msg" style="color:#7a2e0e"><b>📝 ${esc(i.talkNote)}</b></div>`:""}${DATE_ASK.includes(i.folder)?`<div class="btns" style="margin-top:2px"><button data-td="${i.id}">📅 Tareekh badlo</button></div>`:""}${i.message?`<div class="msg">${esc(i.message.slice(0,140))}${i.message.length>140?"…":""}</div>`:""}
       <div class="meta">${i.source?esc(i.source)+" · ":""}Aaya: ${esc(fmt(i.created))}</div>
       ${(i.recs||[]).length||(i.quotes||[]).length?`<div class="meta">${(i.recs||[]).length?"🎙 "+i.recs.length+" recording":""}${(i.recs||[]).length&&(i.quotes||[]).length?" · ":""}${(i.quotes||[]).length?"📄 "+i.quotes.length+" quotation":""}</div>`:""}${i.lastQuote?`<div class="meta">📄 Aakhri quotation: <b>${esc(i.lastQuote)}</b></div>`:""}
+      ${(i.quotes||[]).length?`<div style="margin:6px 0">${i.quotes.map((q,k)=>`<div style="display:flex;align-items:center;gap:6px;background:#e3f5e9;border:1px solid #1f8a4c;border-radius:8px;padding:6px 8px;margin:4px 0"><div style="flex:1;min-width:0;font-size:13px;color:#14532d"><b>📄 ${esc(q.title||String(q.name).replace(/\.pdf$/i,"").replace(/_/g," "))}</b>${q.total?` · <b>${esc(inr(q.total))}</b>`:""}<br><small>${esc(q.date||"")}</small></div><button data-qd="${i.id}|${k}" style="padding:5px 8px;font-size:12px">⬇ Dekho</button><button data-qs="${i.id}|${k}" style="padding:5px 8px;font-size:12px">📤</button><button data-qx="${i.id}|${k}" style="padding:5px 9px;font-size:13px;background:#c0392b;color:#fff">✕</button></div>`).join("")}</div>`:""}
       ${quoteList(i).length?`<div class="meta">${quoteList(i).slice(-3).map(q=>"📄 "+esc(q.x.slice(0,70))+" · "+esc(fmt(q.t)).slice(0,10)).join("<br>")}</div>`:""}${i.fuCount?`<div class="meta">🔁 ${i.fuCount} follow-up gaye · aakhri ${esc(fmt(i.fuLast)).slice(0,10)} · <b>${i.fuBy==="staff"?"🧑 Staff ne":"🙋 Aapne"}</b></div>`:""}
       <div class="meta">${lc?`📞 Aakhri call: <b>${esc(fmt(lc.t))}</b> (${calls.length} baar) · <b style="color:${lastBy(i)==="staff"?"#7a2e0e":"#14663a"}">${lastBy(i)==="staff"?"🧑 Staff baat kar raha hai":"🙋 Aap baat kar rahe ho"}</b>`:"📞 Abhi tak call nahi kiya"}</div>
       ${tab==="fu"&&fuHeld(i)?`<div class="sum" style="background:#d9f2e3">✅ Follow-up ho gaya · ${Math.max(1,Math.ceil((i.fuHold-Date.now())/60000))} min mein "${esc(fName2(i.folder))}" mein chali jayegi (abhi call kar sakte ho)</div>`:""}${tab==="fu"&&i.phone?`<div class="btns"><a class="wa" style="padding:10px 14px;font-size:15px" target="_blank" rel="noopener" href="${waLink(i.phone,fuText(i))}" data-fu="${i.id}">📤 Follow-up bhejo</a>${(i.quotes||[]).length?`<button data-fq="${i.id}">📎 Quotation PDF bhi bhejo</button>`:""}<button data-fs="${i.id}">⏭ 10 din baad</button></div><div class="meta">${(i.fuCount||0)?"Ab tak "+i.fuCount+" follow-up gaye":"Pehla follow-up"}</div>`:""}
@@ -250,16 +251,17 @@ function render(){
       </div>
       <div class="mini"><select data-sz="${i.id}"><option value="">Size?</option>${SIZES.map(([k,n])=>`<option value="${k}" ${i.size===k?"selected":""}>${n}</option>`).join("")}</select>
         <select data-pr="${i.id}"><option value="">Product?</option>${PRODS.map(([k,n])=>`<option value="${k}" ${i.prod===k?"selected":""}>${n}</option>`).join("")}</select></div>
-      ${(i.quotes||[]).length?`<div class="btns" style="margin-top:4px">${i.quotes.map((q,k)=>`<button data-qd="${i.id}|${k}" style="background:#fff3cd;color:#5a3d00;font-size:12px;padding:4px 8px">📄 ${esc(String(q.name).slice(0,22))} ⬇</button>`).join("")}</div>`:""}
+
       ${i.folder!=="deleted"?`<div class="btns" style="margin-top:6px">${["nophone","baat","khud","vdone","confirm","spare","deleted"].filter(f=>f!==i.folder).map(f=>`<button class="${f==="confirm"?"g":f==="deleted"?"r":""}" data-mv="${i.id}|${f}">${MVL[f]}</button>`).join("")}</div>`:`<div class="btns" style="margin-top:6px"><button data-mv="${i.id}|${i.delFrom&&i.delFrom!=="deleted"?i.delFrom:"inquiry"}">↩ Wapas lao (${esc(fName2(i.delFrom&&i.delFrom!=="deleted"?i.delFrom:"inquiry"))})</button><button class="r" data-px="${i.id}">❌ Hamesha ke liye delete</button></div>`}
       <div>
       </div></div>`}).join("");
   document.querySelectorAll("[data-open]").forEach(b=>b.onclick=()=>openDetail(b.dataset.open));
 document.querySelectorAll("[data-qj]").forEach(b=>b.onclick=()=>{openDetail(b.dataset.qj);const f=$("qFile");if(f)f.click();});
 document.querySelectorAll("[data-qd]").forEach(b=>b.onclick=()=>{const[id,k]=b.dataset.qd.split("|"),it=byId(id),q=it&&(it.quotes||[])[Number(k)];if(!q)return;fileBlob(q).then(bl=>{if(!bl){toast("File is phone mein nahi mili");return;}const f=new File([bl],q.name,{type:q.type||"application/pdf"});
-  if(navigator.canShare&&navigator.canShare({files:[f]})&&confirm("OK = WhatsApp/Share pe bhejo\nCancel = Download karo")){navigator.share({files:[f],text:"Paramount Technology - Quotation"}).catch(()=>{});return;}
   const u=URL.createObjectURL(f),a=document.createElement("a");a.href=u;a.download=q.name;document.body.appendChild(a);a.click();a.remove();toast("⬇ Download ho raha hai");});});
   document.querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>openQuote(b.dataset.q));
+  document.querySelectorAll("[data-qs]").forEach(b=>b.onclick=()=>{const[id,k]=b.dataset.qs.split("|"),it=byId(id),q=it&&(it.quotes||[])[Number(k)];if(!q)return;fileBlob(q).then(bl=>{if(!bl){toast("File is phone mein nahi mili");return;}const f=new File([bl],q.name,{type:q.type||"application/pdf"});if(navigator.canShare&&navigator.canShare({files:[f]}))navigator.share({files:[f],text:"Paramount Technology - Quotation"}).catch(()=>{});else toast("Share nahi ho paya, ⬇ Dekho se download karke bhejo");});});
+  document.querySelectorAll("[data-qx]").forEach(b=>b.onclick=()=>{const[id,k]=b.dataset.qx.split("|"),it=byId(id);if(!it||!confirm("Ye quotation hataoge?"))return;const q=it.quotes.splice(Number(k),1)[0];if(q&&q.fid)fdel(q.fid);(it.notes=it.notes||[]).push({t:new Date().toISOString(),text:"✕ Galat PDF hataya: "+(q.title||q.name)});it.updated=Date.now();save();const y=window.scrollY;render();window.scrollTo(0,y);toast("Quotation hata di");});
   document.querySelectorAll("[data-sq]").forEach(b=>b.onclick=()=>openSpecial(b.dataset.sq));
   document.querySelectorAll("[data-qq]").forEach(b=>b.onclick=()=>{const i=byId(b.dataset.qq);if(!i)return;openQuote(i.id);$("qText").value=i.size+" BPM "+({water:"water",csd:"soda",juice:"juice"})[i.prod]+" plant";$("qMake").click();});
   document.querySelectorAll("[data-ph]").forEach(b=>b.onclick=()=>{const i=byId(b.dataset.ph);if(!i)return;const v=prompt("Party ka mobile number likho (WhatsApp mein naam par tap karke number dikh jata hai):","");if(!v)return;const d=v.replace(/[^0-9+]/g,"");if(d.replace(/\D/g,"").length<10){toast("Number poora nahi hai");return;}i.phone=d;i.updated=Date.now();save();const y=window.scrollY;render();window.scrollTo(0,y);toast("Number jud gaya — ab Call/WhatsApp kar sakte ho");});
@@ -857,7 +859,7 @@ function openQuote(id){
     const fname="PT_Quotation_"+(party||i.phone||"party").replace(/[^A-Za-z0-9]+/g,"_").slice(0,30)+"_"+q.title.replace(/[^A-Za-z0-9]+/g,"_").slice(0,40)+".pdf";
     file=new File([r.blob],fname,{type:"application/pdf"});
     out.innerHTML="✅ <b>"+esc(q.title)+"</b><br>"+q.items.map(x=>esc(x.n)+" — "+(x.a?inr(x.a):"baad mein")).join("<br>")+"<br><b>Total (GST ke saath): "+inr(r.total)+"</b>";
-    const fid=uid();try{await fput(fid,file);(i.quotes=i.quotes||[]).push({fid:fid,name:fname,type:"application/pdf",size:file.size,date:new Date().toISOString().slice(0,10)});
+    const fid=uid();try{await fput(fid,file);(i.quotes=i.quotes||[]).push({fid:fid,name:fname,type:"application/pdf",size:file.size,date:new Date().toISOString().slice(0,10),title:q.title,total:r.total});
       (i.qBy="owner",QMOVE.includes(i.folder)&&(i.folder="khud",i.fuHold=0),i.notes=i.notes||[]).push({t:new Date().toISOString(),text:"📄 Quotation banaya: "+q.title+" ("+inr(r.total)+")"});qTag(i,q,$("qText").value);i.updated=Date.now();save();}catch(e){}
     $("qSend").style.display="block";toast("PDF ban gayi, card mein bhi save ho gayi");
   };
