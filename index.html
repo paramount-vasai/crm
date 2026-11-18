@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Paramount CRM v47</title>
+<title>Paramount CRM v48</title>
 <style>
 :root{--bg:#f3f5f9;--card:#fff;--ink:#1b2430;--mute:#6b7685;--line:#e2e7ef;--pri:#123b6b;--acc:#1f8a4c;--warn:#c0392b;--chip:#e8eef6}
 *{box-sizing:border-box}
@@ -122,9 +122,9 @@ const FOLDERS=[["inquiry","📥 Inquiry"],["nophone","📵 Phone nahi utha"],["b
 /* har folder se kahan ja sakta hai */
 const ROUTES={inquiry:["nophone","baat","deleted"],nophone:["baat","khud","deleted"],baat:["nophone","khud","deleted"],khud:["vdone","confirm","deleted"],vdone:["confirm","deleted"],confirm:["deleted"],spare:["deleted"]};
 const MVL={nophone:"📵 Phone nahi utha",baat:"💬 Baat chal rahi",khud:"📝 Khud ki Quotation",vdone:"✅ Visit aa gayi",confirm:"🎉 Order Confirm",deleted:"🗑 Delete"};
-const OLDF={staff:"baat",later:"baat",tdate:"baat",maine:"baat",kal:"baat",fu10:"baat",important:"khud",jaldi:"khud",visit:"khud"};
+const OLDF={staff:"baat",later:"baat",tdate:"baat",maine:"baat",kal:"baat",fu10:"baat",fcall:"baat",important:"khud",jaldi:"khud",visit:"khud",kquote:"khud"};
 function qByOf(i){if(i.qBy)return i.qBy;const lq=(i.notes||[]).filter(n=>/Quotation/i.test(n.text||"")).slice(-1)[0];return lq?(/\(Staff\)\s*$|staff/i.test(lq.text||"")?"staff":"owner"):"";}
-function mapOld(i){const f=i.folder;if(f==="quote")return qByOf(i)==="owner"?"khud":"baat";return OLDF[f]||f;}
+function mapOld(i){const f=i.folder;if(f==="kquote"&&i.kqAt&&!i.talkOn){const d=new Date(Number(i.kqAt)),p=n=>String(n).padStart(2,"0");i.talkOn=d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate());}if(f==="quote")return qByOf(i)==="owner"?"khud":"baat";return OLDF[f]||f;}
 let S={items:[],seen:[],sheetUrl:"",lastSync:""};
 const LOCKABLE=["khud","confirm","spare"];
 function lockF(){const a=Array.isArray(S.lockF)?S.lockF.filter(f=>LOCKABLE.includes(f)):[];return a.length||S.lockV===2?a:LOCKABLE.slice();}
@@ -235,7 +235,7 @@ function render(){
         ${isLocked(i)?'<span class="badge" style="background:#123b6b;color:#fff">🔒 Sirf aap</span>':""}${qCount(i)?`<span class="badge">📄 ${i.qBy==="staff"?"🧑 Staff ki quotation":"🙋 Aapki quotation"}</span>`:""}${i.isNew?'<span class="badge new">NAYA</span>':""}${i.msgAlert?'<span class="badge new">📩 Naya message</span>':""}${(i.notes||[]).some(n=>/^♻️/.test(n.text||""))&&i.folder==="inquiry"?'<span class="badge">♻️ Pehle delete ki thi</span>':""}${today?'<span class="badge">⏰ Reminder</span>':""}
         ${qq?`<span class="badge">${esc(FOLDERS.find(f=>f[0]===i.folder)[1])}</span>`:""}
         ${(fsize||fprod||qq)?`<span class="badge">📁 ${esc((FOLDERS.find(f=>f[0]===i.folder)||["",i.folder])[1])}</span>`:""}${i.folder==="vdone"&&i.visitOn?`<span class="badge" style="background:#1f8a4c;color:#fff">✅ Visit aayi: ${esc(dmy(i.visitOn))}</span>`:""}${DATE_F.includes(i.folder)&&!i.talkOn?`<span class="badge">📅 Tareekh daalo</span>`:""}${DATE_F.includes(i.folder)&&i.talkOn?`<span class="badge ${tdDue(i)?"":"fu"}" style="${tdDue(i)?"background:#c0392b;color:#fff":""}">${tdDue(i)?"⏰ AAJ BAAT KARO":"📅 "+esc(dmy(i.talkOn))+" ko phone"}</span>`:""}${i.visitAt?`<span class="badge">🏭 Visit: ${esc(fmt(new Date(i.visitAt).toISOString())).slice(0,10)}</span>`:""}${i.folder==="kal"?`<span class="badge fu">${new Date(i.kalSince||i.updated||0).toDateString()===new Date().toDateString()?"📅 Kal call karna":"📞 Aaj call karo"}</span>`:""}${FU_F.includes(i.folder)?`<span class="badge fu" style="${fuDue(i)?"background:#c0392b;color:#fff":""}">${fuDue(i)?"⏰ Follow-up aaj":"📅 Follow-up: "+esc(fmt(fuNext(i)).slice(0,10))}${i.folder==="baat"&&i.talkOn?" (aapki tareekh)":""}</span>`:""}</div>
-      <div class="ph">${esc(i.phone||"")}</div>
+      <div class="ph">${esc(i.phone||"")}</div>${i.kqReq?`<div class="msg" style="background:#fff3cd;border:1px solid #e0b100;border-radius:8px;padding:6px;color:#5a3d00"><b>📝 Quotation chahiye:</b> ${esc(i.kqReq)} <small>(${esc(i.kqReqBy||"")})</small></div>`:""}${(i.sfiles||[]).length?`<div class="btns">${i.sfiles.slice(-4).map(f=>`<a target="_blank" rel="noopener" href="${esc(f.url)}" style="background:#ffe082;color:#5a3d00">📎 ${esc(String(f.name).slice(0,26))}</a>`).join("")}</div>`:""}
       ${DATE_ASK.includes(i.folder)&&i.talkNote?`<div class="msg" style="color:#7a2e0e"><b>📝 ${esc(i.talkNote)}</b></div>`:""}${DATE_ASK.includes(i.folder)?`<div class="btns" style="margin-top:2px"><button data-td="${i.id}">📅 Tareekh badlo</button></div>`:""}${i.message?`<div class="msg">${esc(i.message.slice(0,140))}${i.message.length>140?"…":""}</div>`:""}
       <div class="meta">${i.source?esc(i.source)+" · ":""}Aaya: ${esc(fmt(i.created))}</div>
       ${(i.recs||[]).length||(i.quotes||[]).length?`<div class="meta">${(i.recs||[]).length?"🎙 "+i.recs.length+" recording":""}${(i.recs||[]).length&&(i.quotes||[]).length?" · ":""}${(i.quotes||[]).length?"📄 "+i.quotes.length+" quotation":""}</div>`:""}${i.lastQuote?`<div class="meta">📄 Aakhri quotation: <b>${esc(i.lastQuote)}</b></div>`:""}
@@ -932,7 +932,7 @@ async function srvPull(manual){if(!srvOk())return;try{const r=await fetch(S.srvU
     let l=S.items.find(x=>x.id===s.id||x.sid===s.id)||(last10(s.phone)?S.items.find(x=>last10(x.phone)===last10(s.phone)):null);
     if(!l){l=Object.assign({},s,{sid:s.id,id:uid(),calls:s.calls||[],notes:s.notes||[],payments:s.payments||[]});S.items.push(l);n++;return;}
     const oQ=qCount(l),oF0=l.folder;l.sid=s.id;l.calls=mergeArr(l.calls,s.calls);l.notes=mergeArr(l.notes,s.notes);if(qCount(l)>oQ&&l.qBy!=="owner")l.qBy="staff";const oLock=isLocked(l);
-    if((s.updated||0)>(l.updated||0)){const oF=l.folder,oFu=Number(l.fuLast)||0;["folder","name","fuLast","fuCount","baatSince","size","prod","qprods","sizeManual","visitAt","remind","isNew","msgAlert","lastQuote","talkOn","talkNote"].forEach(k=>{if(s[k]!==undefined)l[k]=s[k];});if(!l.phone&&s.phone)l.phone=s.phone;l.updated=s.updated;n++;
+    if((s.updated||0)>(l.updated||0)){const oF=l.folder,oFu=Number(l.fuLast)||0;["folder","name","fuLast","fuCount","baatSince","size","prod","qprods","sizeManual","visitAt","remind","isNew","msgAlert","lastQuote","talkOn","talkNote","visitOn","delFrom","qBy","kqReq","kqReqBy","kqNew","sfiles"].forEach(k=>{if(s[k]!==undefined)l[k]=s[k];});if(!l.phone&&s.phone)l.phone=s.phone;l.updated=s.updated;n++;
       if((Number(s.fuLast)||0)>oFu)l.fuBy="staff";
       l.folder=mapOld(l);const okRoute=l.folder===oF||oF==="deleted"||(ROUTES[oF]||[]).includes(l.folder);if(l.folder==="deleted"&&oF!=="deleted")l.delFrom=oF;
       if(l.folder!==oF&&(oLock||!okRoute)){(l.notes=l.notes||[]).push({t:new Date().toISOString(),text:"🔒 Staff ne folder badla tha — wapas laaya ("+(oLock?"sirf aap badal sakte ho":"ye rasta allowed nahi")+")"});l.folder=oF;l.updated=Date.now();rp.push(l);}}});
