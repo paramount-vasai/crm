@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Paramount CRM v49</title>
+<title>Paramount CRM v52</title>
 <style>
 :root{--bg:#f3f5f9;--card:#fff;--ink:#1b2430;--mute:#6b7685;--line:#e2e7ef;--pri:#123b6b;--acc:#1f8a4c;--warn:#c0392b;--chip:#e8eef6}
 *{box-sizing:border-box}
@@ -213,7 +213,7 @@ function renderTabs(){
     CH.map(([z,p])=>`<button class="tab ${fsize===z&&fprod===p?"on":""}" data-s="${z}" data-p="${p}">${z} BPM ${PN[p]} (${cnt(z,p)})</button>`).join("");
   $("tabs2").querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{fsize=b.dataset.s;fprod=b.dataset.p||"";fby="";render();});$("tabs2").querySelectorAll("[data-by]").forEach(b=>b.onclick=()=>{fby=b.dataset.by;fsize="";fprod="";render();});
 }
-const _rndSp=render;render=function(){_rndSp();if(tab!=="spare"||q.trim())return;const d=document.createElement("div");d.className="card";d.style.background="#fff4e6";d.innerHTML='<div class="nm">🔧 Santosh Engineering — Spare parts</div><div style="font-size:13px;margin:4px 0 8px">Parts list (photo + rate), machines aur orders yahan se sambhalo. Party ke naye order is folder mein aate hain.</div><button id="spOpen" style="background:#7a2e0e;color:#fff;border:0;border-radius:8px;padding:10px 14px;font:inherit">🔩 Parts / Machines / Orders kholo</button>';$("list").prepend(d);$("spOpen").onclick=()=>{if(!S.srvUrl){toast("Pehle ☰ mein Sync (server link) set karo");return}window.open(S.srvUrl+"?page=spareadmin","_blank")}};
+const _rndSp=render;render=function(){_rndSp();if(S.pendCall&&byId(S.pendCall.id)){const pi=byId(S.pendCall.id),d0=document.createElement("div");d0.className="card";d0.style.cssText="background:#fff3cd;border:2px solid #e0a800";d0.innerHTML=`<div class="nm">⚠️ Call ke baad ka kaam baaki</div><div class="meta">${esc(pi.name||"(naam nahi)")} · ${esc(pi.phone||"")}</div><div class="btns"><button class="g" id="pcGo">📝 Abhi karo</button><button id="pcX">✕ Chhodo</button></div>`;$("list").prepend(d0);$("pcGo").onclick=()=>openAfterCall(pi.id);$("pcX").onclick=()=>{S.pendCall=null;save();render();};}if(tab!=="spare"||q.trim())return;const d=document.createElement("div");d.className="card";d.style.background="#fff4e6";d.innerHTML='<div class="nm">🔧 Santosh Engineering — Spare parts</div><div style="font-size:13px;margin:4px 0 8px">Parts list (photo + rate), machines aur orders yahan se sambhalo. Party ke naye order is folder mein aate hain.</div><button id="spOpen" style="background:#7a2e0e;color:#fff;border:0;border-radius:8px;padding:10px 14px;font:inherit">🔩 Parts / Machines / Orders kholo</button>';$("list").prepend(d);$("spOpen").onclick=()=>{if(!S.srvUrl){toast("Pehle ☰ mein Sync (server link) set karo");return}window.open(S.srvUrl+"?page=spareadmin","_blank")}};
 function fixCalled(){return false;}
 function render(){
   if(fixCalled()){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
@@ -351,10 +351,65 @@ window.__keep=new Set();
 setInterval(()=>{if(tab==="fu"&&!document.querySelector(".modal.on")){const y=window.scrollY;render();window.scrollTo(0,y);}},20000);
 function logCall(id){const i=byId(id);if(!i)return;if(tab==="fu")window.__keep.add(id);try{localStorage.setItem("pt-pending-rec",JSON.stringify({id:id,t:Date.now()}));}catch(e){}(i.calls=i.calls||[]).push({t:new Date().toISOString(),note:"",by:"Aap"});i.isNew=false;i.msgAlert=0;
   if(tab==="fu"&&FU_F.includes(i.folder))i.fuHold=Math.max(i.fuHold||0,Date.now()+HOLD);
-  i.updated=Date.now();save();setTimeout(render,300);window.__afterCall=id;}
-document.addEventListener("visibilitychange",()=>{if(document.visibilityState!=="visible"||!window.__afterCall)return;const id=window.__afterCall;window.__afterCall=null;const i=byId(id);if(!i||!ROUTES[i.folder])return;const R=ROUTES[i.folder].filter(f=>f!=="deleted");if(!R.length)return;
-  $("tdSheet").innerHTML=`<h2>📞 ${esc(i.name||i.phone||"")}</h2><div class="meta">Abhi "${esc(fName2(i.folder))}" mein hai. Kahan daalna hai?</div><div class="btns" style="margin-top:10px">${DATE_ASK.includes(i.folder)?'<button class="g" id="acDt">📅 Agli tareekh daalo (yahin rahegi)</button>':""}${R.map(f=>`<button class="${f==="confirm"?"g":"p"}" data-ac="${f}">${MVL[f]}</button>`).join("")}<button id="acOk">Wahin rehne do</button></div>`;
-  $("mTd").classList.add("on");$("acOk").onclick=()=>$("mTd").classList.remove("on");if($("acDt"))$("acDt").onclick=()=>askDate(id,i.folder);$("tdSheet").querySelectorAll("[data-ac]").forEach(b=>b.onclick=()=>{$("mTd").classList.remove("on");moveTo(id,b.dataset.ac);});});
+  S.pendCall={id:id,t:Date.now()};i.updated=Date.now();save();setTimeout(render,300);}
+/* ---------- 📞 Call ke baad: ek hi screen (note, folder, tareekh, quotation) — sab apne-aap save ---------- */
+function acOpen(){return $("mTd").classList.contains("on")&&$("tdSheet").dataset.ac;}
+function checkAfterCall(force){const p=S.pendCall;if(!p)return;const i=byId(p.id);if(!i){S.pendCall=null;save();return;}
+  if(acOpen())return;if(p.back){const on=x=>$(x).classList.contains("on");if(on("mQuote")||on("mMenu")||(p.back==="detail"&&on("mDetail")))return;p.back=0;openAfterCall(p.id);return;}if(!force&&(p.shown||Date.now()-p.t<3000))return;openAfterCall(p.id);}
+setInterval(()=>{if(S.pendCall&&S.pendCall.back)checkAfterCall(true);},700);
+function sendVideos(i){if(!(S.videos||"").trim()){toast("Pehle ☰ Settings mein video links save karo");return;}
+  const txt="🎥 Paramount Technology - hamari machines ke video:\n\n"+S.videos.trim().split(/\n+/).map(l=>"▶️ "+l.trim()).join("\n\n")+"\n\nCall: +91 70831 57697";
+  (i.notes=i.notes||[]).push({t:new Date().toISOString(),text:"🎥 Video bheje"});i.updated=Date.now();save();location.href=waLink(i.phone,txt);}
+window.__acFinish=null;
+function openAfterCall(id){const i=byId(id);if(!i)return;const P=S.pendCall||{id:id,t:Date.now()};P.shown=1;S.pendCall=P;save();
+  const p=n=>String(n).padStart(2,"0"),ds=k=>{const d=new Date(Date.now()+k*DAY);return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate());};
+  const opts=[i.folder].concat((ROUTES[i.folder]||[]).filter(f=>f!==i.folder));let sel=i.folder,noDate=false,changed=!!P.changed;
+  const lc=(i.calls||[]).slice(-1)[0]||{};
+  $("tdSheet").dataset.ac="1";
+  $("tdSheet").innerHTML=`<h2>📞 Call ke baad — ${esc(i.name||"(naam nahi)")}</h2><div class="meta">${esc(i.phone||"")} · abhi: <b>${esc(fName2(i.folder))}</b> · <span style="color:#1f8a4c">jo likhoge, apne-aap save hoga</span></div>
+   <label>Kya baat hui? (machine, BPM, budget, shart)</label><textarea id="acN" placeholder="jaise: 60 BPM water plant chahiye, budget 25 lakh, visit agle hafte">${esc(lc.note||"")}</textarea>
+   <div class="btns" style="margin-top:4px"><button id="acMic">🎤 Bolo</button></div>
+   <div class="two"><div><label>Size</label><select id="acSz"><option value="">Size?</option>${SIZES.map(([k,n])=>`<option value="${k}" ${i.size===k?"selected":""}>${n}</option>`).join("")}</select></div>
+   <div><label>Product</label><select id="acPr"><option value="">Product?</option>${PRODS.map(([k,n])=>`<option value="${k}" ${i.prod===k?"selected":""}>${n}</option>`).join("")}</select></div></div>
+   <label>Kis folder mein daalna hai?</label><div class="btns" id="acF">${opts.map(f=>`<button data-af="${f}">${f===i.folder?"📌 "+esc(fName2(f))+" (yahin)":MVL[f]}</button>`).join("")}</div>
+   <div id="acDt"><label>Kis tareekh ko dobara baat / phone karna hai?</label><input id="acD" type="date" value="${esc(i.talkOn||"")}">
+    <div class="btns">${[["Kal",1],["3 din",3],["7 din",7],["10 din",10],["15 din",15],["1 mahina",30],["3 mahine",90],["6 mahine",180]].map(x=>`<button data-aq="${x[1]}" style="padding:5px 9px;font-size:13px">${x[0]}</button>`).join("")}<button id="acNoD" style="padding:5px 9px;font-size:13px">Bina tareekh (10 din)</button></div></div>
+   <div class="meta" style="margin-top:8px">Yahin se bhejo (bhejne ke baad ye screen wapas aayegi):</div>
+   <div class="btns"><button class="p" id="acQ">📄 Quotation</button><button id="acSp" style="background:#6b2fb3;color:#fff">✨ Special</button><button id="acV">🎥 Video</button><button id="acR">🎙 Recording / ❌ galat quotation hatao</button></div>
+   <div class="btns" style="margin-top:12px"><button class="g" id="acDone" style="padding:12px 18px;font-size:16px">✅ Ho gaya — band karo</button></div>`;
+  $("mTd").classList.add("on");spMic("acMic","acN");
+  const paint=()=>{$("acF").querySelectorAll("[data-af]").forEach(b=>{const on=b.dataset.af===sel;b.style.outline=on?"3px solid #1f8a4c":"";b.style.fontWeight=on?"700":"";});
+    $("acDt").style.display=DATE_ASK.includes(sel)?"":"none";$("acNoD").style.display=sel==="baat"?"":"none";$("acD").style.opacity=noDate?".4":"1";};
+  /* har badlav turant save */
+  const apply=()=>{const nt=$("acN").value.trim(),from=i.folder,now=new Date().toISOString();
+    const c=(i.calls||[]).slice(-1)[0];if(c)c.note=nt;
+    if(nt){let n=P.nt&&(i.notes||[]).find(x=>x.t===P.nt);if(!n){P.nt=now;n={t:now,text:""};(i.notes=i.notes||[]).push(n);}n.text="📞 Call: "+nt;}
+    if($("acSz").value!==(i.size||"")){i.size=$("acSz").value;i.sizeManual=true;}if($("acPr").value!==(i.prod||""))i.prod=$("acPr").value;
+    if(sel!==from){if(sel==="deleted")i.delFrom=from;if(sel==="vdone")i.visitOn=today();if(sel==="baat")i.baatSince=Date.now();
+      (i.notes=i.notes||[]).push({t:now,text:fName2(sel)+" mein daala (call ke baad)"});i.folder=sel;}
+    if(DATE_ASK.includes(sel)){const d=noDate?"":$("acD").value;if(d!==(i.talkOn||"")||noDate)i.talkOn=d;if(nt)i.talkNote=nt.slice(0,300);}
+    if(FU_F.includes(sel))i.fuLast=Date.now();
+    i.fuHold=0;i.isNew=false;i.updated=Date.now();window.__keep.delete(i.id);changed=true;P.changed=1;save();};
+  let tmr=null;$("acN").oninput=()=>{clearTimeout(tmr);tmr=setTimeout(apply,600);};
+  $("acSz").onchange=apply;$("acPr").onchange=apply;
+  $("acF").querySelectorAll("[data-af]").forEach(b=>b.onclick=()=>{const f=b.dataset.af;
+    if(f==="deleted"&&!confirm("Delete karna hai?"))return;if(f==="confirm"&&!confirm("Order confirm hua?"))return;
+    sel=f;noDate=false;if(DATE_ASK.includes(f)&&!$("acD").value)$("acD").value=ds(10);paint();apply();
+    if(DATE_ASK.includes(f))toast("📅 Tareekh chuno (10 din pehle se lagi hai)");});
+  $("tdSheet").querySelectorAll("[data-aq]").forEach(b=>b.onclick=()=>{$("acD").value=ds(Number(b.dataset.aq));noDate=false;paint();apply();toast("📅 "+dmy($("acD").value)+" save");});
+  $("acD").onchange=()=>{noDate=false;paint();apply();};$("acNoD").onclick=()=>{noDate=true;paint();apply();toast("Har 10 din follow-up aayega");};
+  paint();
+  const finish=()=>{clearTimeout(tmr);if($("acN").value.trim()||changed)apply();
+    $("mTd").classList.remove("on");delete $("tdSheet").dataset.ac;window.__acFinish=null;
+    if(changed)S.pendCall=null;save();const y=window.scrollY;render();window.scrollTo(0,y);if($("mDetail").classList.contains("on"))openDetail(i.id);
+    if(changed)toast("✅ Save — "+fName2(i.folder)+(i.talkOn&&DATE_ASK.includes(i.folder)?" · "+dmy(i.talkOn)+" ko yaad dilayega":""));};
+  window.__acFinish=finish;
+  const go=(mode,fn)=>{clearTimeout(tmr);apply();P.back=mode;save();$("mTd").classList.remove("on");delete $("tdSheet").dataset.ac;window.__acFinish=null;fn();};
+  $("acDone").onclick=finish;
+  $("acQ").onclick=()=>go("quote",()=>openQuote(i.id));
+  $("acSp").onclick=()=>go("quote",()=>openSpecial(i.id));
+  $("acV").onclick=()=>go("wa",()=>sendVideos(i));
+  $("acR").onclick=()=>go("detail",()=>{openDetail(i.id);const b=$("quoteBox");if(b)b.scrollIntoView({block:"center"});toast("Galat quotation ke aage ✕ dabao · recording ke liye + Recording jodo");});}
 
 /* ---------- files (IndexedDB: badi files ke liye) ---------- */
 let _db;
@@ -987,7 +1042,7 @@ $("bSyncNow").onclick=()=>{S.sheetUrl=normUrl($("sheetUrl").value);save();sync(t
 $("bExport").onclick=doExport;
 $("bImportBtn").onclick=()=>$("fImport").click();
 $("fImport").onchange=e=>{if(e.target.files[0])doImport(e.target.files[0]);e.target.value="";};
-[ "mDetail","mMenu","mQuote","mTd" ].forEach(id=>$(id).addEventListener("click",e=>{if(e.target.id===id){$(id).classList.remove("on");render();}}));
+[ "mDetail","mMenu","mQuote","mTd" ].forEach(id=>$(id).addEventListener("click",e=>{if(e.target.id===id){if(id==="mTd"&&window.__acFinish){window.__acFinish();return;}$(id).classList.remove("on");render();}}));
 
 load();render();
 if(S.sheetUrl){sync(false);setInterval(()=>sync(false),120000);}
@@ -997,7 +1052,7 @@ function afterCall(){let p;try{p=JSON.parse(localStorage.getItem("pt-pending-rec
   openDetail(p.id);
   const b=$("rAdd");if(b){b.textContent="🎙 Abhi ki call ki recording jodo";b.style.cssText="padding:14px 16px;font-size:16px;outline:3px solid var(--acc)";b.scrollIntoView({block:"center"});}
   toast("Call khatam. Recording jodni hai to hara button dabao");}
-document.addEventListener("visibilitychange",()=>{if(!document.hidden){afterCall();if(S.sheetUrl)sync(false);}});
+document.addEventListener("visibilitychange",()=>{if(!document.hidden){setTimeout(()=>checkAfterCall(false),400);if(S.sheetUrl)sync(false);}});window.addEventListener("focus",()=>setTimeout(()=>checkAfterCall(false),400));window.addEventListener("pageshow",()=>setTimeout(()=>checkAfterCall(false),600));setTimeout(()=>{if(S.pendCall&&Date.now()-S.pendCall.t<7200000){S.pendCall.shown=0;checkAfterCall(false);}},1200);
 (function(){const go=async(q)=>{if(!srvOk()){toast("Pehle URL aur PIN daalo");return null;}try{const r=await fetch(S.srvUrl+"?crm="+q+"&pin="+encodeURIComponent(S.srvPin)+"&t="+Date.now());const j=await r.json();if(j.err){$("phInfo").textContent=j.err;return null;}return j;}catch(e){$("phInfo").textContent="Net ki dikkat";return null;}};
 document.addEventListener("click",async e=>{const id=e.target&&e.target.id;
  if(id==="bSPin"){$("phInfo").textContent="Dekh rahe hain...";const j=await go("staffpin");if(j)$("phInfo").innerHTML=j.pin?"🔑 Staff PIN: <b style='font-size:20px'>"+esc(j.pin)+"</b>":"Staff PIN abhi set nahi hai – ✏️ se banao";}
