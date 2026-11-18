@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Paramount CRM v48</title>
+<title>Paramount CRM v49</title>
 <style>
 :root{--bg:#f3f5f9;--card:#fff;--ink:#1b2430;--mute:#6b7685;--line:#e2e7ef;--pri:#123b6b;--acc:#1f8a4c;--warn:#c0392b;--chip:#e8eef6}
 *{box-sizing:border-box}
@@ -208,7 +208,7 @@ function renderTabs(){
   const cnt=(z,p)=>ALL.filter(i=>(!z||i.size===z)&&(!p||i.prod===p)).length;
   const PN={water:"Pani",juice:"Juice",csd:"Soda"};
   const CH=[];SIZES.forEach(([z])=>["water","juice","csd"].forEach(p=>{if(z==="20"&&p==="csd")return;CH.push([z,p]);}));
-  $("tabs2").style.flexWrap="";$("tabs2").style.display=(tab==="rep"||tab==="spare")?"none":"";
+  $("tabs2").style.flexWrap="";$("tabs2").style.display="none";fsize="";fprod="";
   $("tabs2").innerHTML=`<button class="tab ${!fsize&&!fprod&&!fby?"on":""}" data-s="" data-p="">Sab (${base.length})</button><button class="tab ${!fsize&&fprod==="common"?"on":""}" data-s="" data-p="common">🔀 Common (${cnt("","common")})</button>`+
     CH.map(([z,p])=>`<button class="tab ${fsize===z&&fprod===p?"on":""}" data-s="${z}" data-p="${p}">${z} BPM ${PN[p]} (${cnt(z,p)})</button>`).join("");
   $("tabs2").querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{fsize=b.dataset.s;fprod=b.dataset.p||"";fby="";render();});$("tabs2").querySelectorAll("[data-by]").forEach(b=>b.onclick=()=>{fby=b.dataset.by;fsize="";fprod="";render();});
