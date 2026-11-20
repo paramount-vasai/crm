@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Paramount CRM v58</title>
+<title>Paramount CRM v59</title>
 <style>
 :root{--bg:#f3f5f9;--card:#fff;--ink:#1b2430;--mute:#6b7685;--line:#e2e7ef;--pri:#123b6b;--acc:#1f8a4c;--warn:#c0392b;--chip:#e8eef6}
 *{box-sizing:border-box}
@@ -183,7 +183,7 @@ function retroTag(i){const Q=[];(i.notes||[]).forEach(n=>{const t=String(n.text|
   const old=[i.size,i.prod,i.folder].join("|");i.qtagN=Q.length;if(qByOf(i)==="owner"&&QMOVE.includes(i.folder))i.folder="khud";{const lt=tms(Q[Q.length-1].t);if(lt)i.baatSince=Math.max(i.baatSince||0,lt);}
   if(sz){i.size=sz;i.sizeManual=false;}if(P.length){i.qprods=[...new Set([...(i.qprods||[]),...P])];i.prod=i.qprods.length>1?"common":i.qprods[0];}
   if([i.size,i.prod,i.folder].join("|")!==old){i.updated=Date.now();return true;}return false;}
-function dedupItems(){const by={},drop=new Set();S.items.forEach(i=>{const n=last10(i.phone);if(!n)return;const o=by[n];if(!o){by[n]=i;return;}const nw=(i.updated||0)>=(o.updated||0)?i:o,ol=nw===i?o:i;
+function dedupItems(){const by={},drop=new Set();S.items.forEach(i=>{const n=last10(i.phone);if(!n)return;const o=by[n];if(!o){by[n]=i;return;}const nw=(i.updated||0)>=(o.updated||0)?i:o,ol=nw===i?o:i;if(nw.folder==="inquiry"&&ol.folder&&ol.folder!=="inquiry"){["folder","talkOn","talkNote","visitOn","delFrom","baatSince","fuLast","fuCount","size","prod","qBy"].forEach(k=>{if(ol[k]!==undefined)nw[k]=ol[k];});nw.isNew=false;nw.msgAlert=1;}
   ["calls","notes","payments","chat"].forEach(f=>{if(ol[f]&&ol[f].length)nw[f]=mergeArr(ol[f],nw[f]||[]);});["quotes","recs"].forEach(f=>{if(ol[f]&&ol[f].length){const s=new Set((nw[f]||[]).map(x=>x&&x.id||JSON.stringify(x)));nw[f]=(nw[f]||[]).concat(ol[f].filter(x=>!s.has(x&&x.id||JSON.stringify(x))));}});if(!nw.name&&ol.name)nw.name=ol.name;if(!nw.sid&&ol.sid)nw.sid=ol.sid;if(!nw.final&&ol.final)nw.final=ol.final;
   drop.add(ol);by[n]=nw;});if(drop.size)S.items=S.items.filter(i=>!drop.has(i));return drop.size;}
 function normItems(){S.items=S.items.filter(i=>last10(i.phone)||i.folder!=="inquiry"||(i.calls&&i.calls.length)||(i.notes&&i.notes.length)||(i.quotes&&i.quotes.length));dedupItems();const ok=FOLDERS.map(f=>f[0]);S.items.forEach(i=>{if(i.folder==="important")i.folder="jaldi";if(i.folder==="fu10")i.folder=(i.notes||[]).some(n=>/Quotation/i.test(n.text||""))?"quote":(i.fuFrom||"baat");{const nf=mapOld(i);if(nf!==i.folder){i.folder=nf;i.updated=Date.now();}}if(i.folder==="vdone"&&!i.visitOn&&!i.vMig){i.vMig=1;i.visitOn=i.talkOn||"";i.talkOn="";}if(!ok.includes(i.folder))i.folder="inquiry";i.calls=i.calls||[];i.notes=i.notes||[];i.payments=i.payments||[];if(!i.qBy&&qCount(i)){const lq=(i.notes||[]).filter(n=>/Quotation/i.test(n.text||"")).slice(-1)[0];i.qBy=/\(Staff\)\s*$|staff/i.test(lq.text||"")?"staff":"owner";}if((i.fuCount||0)>0&&!i.fuBy)i.fuBy=i.notes.some(n=>/^📤 WhatsApp follow-up bheja/.test(n.text||""))?"owner":"staff";i.created=i.created||new Date().toISOString();retroTag(i);if(["s","m","l","xl"].includes(i.size)){const old=i.size;i.size="";if(!i.sizeManual)autoTag(i);if(!i.size)i.size={s:"30",m:"60",l:"120",xl:"150"}[old];}autoTag(i);});}
@@ -238,6 +238,7 @@ function render(){
   if(qq){rows=smartSearch(qq);}
   if(tab==="baat"&&!qq&&!fsize&&!fprod)rows.sort((a,b)=>fuNext(a)-fuNext(b));else if(DATE_F.includes(tab)&&!qq&&!fsize&&!fprod)rows.sort((a,b)=>(tdDue(b)-tdDue(a))||String(a.talkOn||"9").localeCompare(String(b.talkOn||"9")));
   else if((tab==="fud"||tab==="fus")&&!qq)rows.sort((a,b)=>(b.fuLast||0)-(a.fuLast||0));else if(tab==="fu"&&!qq)rows.sort((a,b)=>(fuNext(a)-fuNext(b)));else rows.sort((a,b)=>(b.updated||0)-(a.updated||0));
+  if(tab!=="fu"&&tab!=="inquiry")rows.sort((a,b)=>(b.msgAlert?1:0)-(a.msgAlert?1:0));
   {const k=tab+"|"+qq+"|"+fsize+"|"+fprod;if(window.__ordK===k&&window.__ord){const pos=new Map(window.__ord.map((id,n)=>[id,n]));rows.sort((a,b)=>(pos.has(a.id)?pos.get(a.id):-1)-(pos.has(b.id)?pos.get(b.id):-1));}window.__ordK=k;window.__ord=rows.map(i=>i.id);}
   if(!rows.length){$("list").innerHTML=`<div class="empty">${qq?"Kuch nahi mila":(tab==="fud"?"Aapne abhi tak kisi ko follow-up nahi bheja":tab==="fus"?"Staff ne abhi tak kisi ko follow-up nahi bheja":tab==="fu"?"✅ Aaj koi follow-up baaki nahi.<br><small>\"Phone nahi utha\" har 10 din, \"Baat chal rahi\" aapki tareekh par (ya har 10 din). Khud ki Quotation aur Visit aa gayi apne folder mein hi upar aati hain.</small>":"Is folder mein abhi kuch nahi")}</div>`;return;}
   $("list").innerHTML=rows.map(i=>{
@@ -934,9 +935,9 @@ function ingestRows(rows){
     const when=parseDT(A,"");
     const chatAdd=c=>{(c.chat=c.chat||[]).push({t:when,who:"c",text:msg});if(E&&!/^AUTO[: ]|^MANUAL|^PAUSE/i.test(E))c.chat.push({t:when,who:"b",text:E});};
     const fName=f=>{const x=FOLDERS.find(y=>y[0]===f);return x?x[1]:f;};const today=new Date().toLocaleDateString("en-IN");const addN=(c,txt)=>{c.notes=c.notes||[];const l=c.notes[c.notes.length-1];if(l&&l.text===txt&&new Date(l.t).toLocaleDateString("en-IN")===today)return;c.notes.push({t:new Date().toISOString(),text:txt});};
-    if(ex){if(ex.folder==="deleted"){addN(ex,"♻️ Ye party pehle aapne DELETE ki thi. Naya message aaya, isliye wapas Inquiry mein aayi.");ex.folder="inquiry";ex.isNew=true;}else if(ex.folder!=="inquiry"){addN(ex,"📩 Naya WhatsApp message aaya. Party abhi '"+fName(ex.folder)+"' folder mein hai.");ex.msgAlert=1;}
-      window.__st.notes++;chatAdd(ex);autoTag(ex);ex.updated=Date.now();if(LATER_RE.test(msg)&&ex.folder==="inquiry")ex.folder="later";}
-    else{const c={id:uid(),name:name,phone:phone,message:msg,folder:LATER_RE.test(msg)?"later":"inquiry",created:when,calls:[],notes:[],chat:[],source:"WhatsApp (auto)",payments:[],final:0,remind:"",isNew:true,updated:Date.now()};if(wasDel)c.notes.push({t:new Date().toISOString(),text:"♻️ Ye party pehle aapne hamesha ke liye DELETE ki thi ("+new Date(wasDel).toLocaleDateString("en-IN")+"). Naya message aaya, isliye wapas aayi."});chatAdd(c);autoTag(c);S.items.push(c);added++;}
+    if(ex){if(ex.folder!=="inquiry"){addN(ex,"📩 Naya WhatsApp message aaya. Party abhi '"+fName(ex.folder)+"' folder mein hai.");ex.msgAlert=1;}
+      window.__st.notes++;chatAdd(ex);autoTag(ex);ex.updated=Date.now();}
+    else{const c={id:uid(),name:name,phone:phone,message:msg,folder:wasDel?"deleted":"inquiry",msgAlert:wasDel?1:0,created:when,calls:[],notes:[],chat:[],source:"WhatsApp (auto)",payments:[],final:0,remind:"",isNew:true,updated:Date.now()};if(wasDel)c.notes.push({t:new Date().toISOString(),text:"📩 Ye party pehle aapne hamesha ke liye DELETE ki thi ("+new Date(wasDel).toLocaleDateString("en-IN")+"). Naya message aaya — Deleted folder mein rakhi hai (Inquiry mein nahi)."});chatAdd(c);autoTag(c);S.items.push(c);added++;}
   }
   S.seen=Array.from(seen).slice(-5000);
   return added;
@@ -1011,7 +1012,7 @@ async function srvPull(manual){if(!srvOk())return;try{const r=await fetch(S.srvU
     if((s.updated||0)>(l.updated||0)){const oF=l.folder,oFu=Number(l.fuLast)||0;["folder","name","fuLast","fuCount","baatSince","size","prod","qprods","sizeManual","visitAt","remind","isNew","msgAlert","lastQuote","talkOn","talkNote","visitOn","delFrom","qBy","kqReq","kqReqBy","kqNew","sfiles"].forEach(k=>{if(s[k]!==undefined)l[k]=s[k];});if(!l.phone&&s.phone)l.phone=s.phone;l.updated=s.updated;n++;
       if((Number(s.fuLast)||0)>oFu)l.fuBy="staff";
       l.folder=mapOld(l);const okRoute=l.folder===oF||oF==="deleted"||(ROUTES[oF]||[]).includes(l.folder);if(l.folder==="deleted"&&oF!=="deleted")l.delFrom=oF;
-      if(l.folder!==oF&&(oLock||!okRoute)){(l.notes=l.notes||[]).push({t:new Date().toISOString(),text:"🔒 Staff ne folder badla tha — wapas laaya ("+(oLock?"sirf aap badal sakte ho":"ye rasta allowed nahi")+")"});l.folder=oF;l.updated=Date.now();rp.push(l);}}});
+      if(l.folder!==oF&&(oLock||!okRoute||l.folder==="inquiry")){(l.notes=l.notes||[]).push({t:new Date().toISOString(),text:"🔒 Staff ne folder badla tha — wapas laaya ("+(oLock?"sirf aap badal sakte ho":(l.folder==="inquiry"?"purani party Inquiry mein nahi jaati":"ye rasta allowed nahi"))+")"});l.folder=oF;l.updated=Date.now();rp.push(l);}}});
   if(rp.length)srvPush(rp);normItems();try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}const y=window.scrollY;render();window.scrollTo(0,y);if($("srvInfo"))$("srvInfo").textContent="Juda hua ✅ · aakhri sync "+fmt(new Date());if(manual)toast(n+" party update hui");}catch(e){if(manual)toast("Sync nahi hua: net/URL check karo");}}
 let repDays=1;
 async function showReport(){$("list").innerHTML='<div class="empty">Load ho raha hai...</div>';try{const r=await fetch(S.srvUrl+"?crm=report&days="+repDays+"&pin="+encodeURIComponent(S.srvPin)+"&t="+Date.now());const j=await r.json();if(j.err){$("list").innerHTML='<div class="empty">'+esc(j.err)+'</div>';return;}
