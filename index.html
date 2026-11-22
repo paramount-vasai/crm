@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Paramount CRM v69</title>
+<title>Paramount CRM v70</title>
 <style>
 :root{--bg:#f3f5f9;--card:#fff;--ink:#1b2430;--mute:#6b7685;--line:#e2e7ef;--pri:#123b6b;--acc:#1f8a4c;--warn:#c0392b;--chip:#e8eef6}
 *{box-sizing:border-box}
@@ -51,7 +51,7 @@ label{display:block;font-size:12.5px;color:var(--mute);margin:10px 0 3px}
 </head>
 <body>
 <header>
-  <div class="row"><h1>Paramount CRM <span style="font-size:11px;opacity:.7">v69</span></h1>
+  <div class="row"><h1>Paramount CRM <span style="font-size:11px;opacity:.7">v70</span></h1>
     <button id="bSync" title="Sheet se naye enquiry lao">⟳ Sync</button>
     <button id="bMenu">☰</button></div>
   <input id="search" type="search" placeholder="Naam / mobile / 120 BPM water se dhundo...">
@@ -158,7 +158,10 @@ function fuBase(i){const lc=(i.calls||[]).slice(-1)[0],lm=(i.chat||[]).filter(m=
   return Math.max(i.fuLast||0,i.baatSince||0,lc?tms(lc.t):0,lm?tms(lm.t):0)||i.updated||tms(i.created);}
 function fuNext(i){if(i.folder==="busy"||i.folder==="busyme")return fuBase(i)+2*3600000;if(i.folder==="baat"&&i.talkOn){const x=new Date(i.talkOn+"T00:00:00").getTime();if(x)return x;}return fuBase(i)+FU_DAYS*DAY;}
 const FU_F=["staff"],FU_X=["inquiry","khud","vdone","confirm","spare","deleted"],QMOVE=["inquiry","staff","nophone","nophone2","baat","baatnp"];
-function lastTouch(i){const lc=(i.calls||[]).slice(-1)[0];return Math.max(Number(i.fuLast)||0,lc?new Date(lc.t).getTime()||0:0);}
+function fuLog(){try{return JSON.parse(localStorage.getItem("pt-fulog")||"{}")}catch(e){return {}}}
+function fuLogAdd(i){const L=fuLog(),k=last10(i.phone)||i.id,now=Date.now();L[k]=now;Object.keys(L).forEach(x=>{if(now-L[x]>13*3600000)delete L[x];});try{localStorage.setItem("pt-fulog",JSON.stringify(L))}catch(e){}}
+function fuApply(){const L=fuLog();S.items.forEach(i=>{const t=L[last10(i.phone)||i.id];if(t&&(Number(i.fuLast)||0)<t){i.fuLast=t;i.fuCount=(i.fuCount||0)+1;i.fuBy="owner";i.fuDay=today();}});}
+function lastTouch(i){const lc=(i.calls||[]).slice(-1)[0],L=window.__fl||{};return Math.max(Number(i.fuLast)||0,lc?new Date(lc.t).getTime()||0:0,Number(L[last10(i.phone)||i.id])||0);}
 const RECENT=5*3600000;const H12=12*3600000;function touchedToday(i){if(i.folder==="deleted"||i.folder==="imp")return false;const t=lastTouch(i);return !!t&&Date.now()-t<H12;}
 function shifted(i){return touchedToday(i)&&lastTouch(i)>(Number(i.fmAt)||0);}
 function touchWho(i){const lc=(i.calls||[]).slice(-1)[0],ct=lc?new Date(lc.t).getTime()||0:0,f=Number(i.fuLast)||0;const st=ct>=f?(lc&&isStaffBy(lc.by)):i.fuBy==="staff";const d=new Date(Math.max(ct,f)),h=d.getHours(),m=String(d.getMinutes()).padStart(2,"0");return (st?"🧑 Staff ne":"🙋 Aapne")+" baat ki · "+((h%12)||12)+":"+m+(h>=12?" PM":" AM");}
@@ -193,11 +196,11 @@ function retroTag(i){const Q=[];(i.notes||[]).forEach(n=>{const t=String(n.text|
   const old=[i.size,i.prod,i.folder].join("|");i.qtagN=Q.length;if(qByOf(i)==="owner"&&QMOVE.includes(i.folder))i.folder="khud";{const lt=tms(Q[Q.length-1].t);if(lt)i.baatSince=Math.max(i.baatSince||0,lt);}
   if(sz){i.size=sz;i.sizeManual=false;}if(P.length){i.qprods=[...new Set([...(i.qprods||[]),...P])];i.prod=i.qprods.length>1?"common":i.qprods[0];}
   if([i.size,i.prod,i.folder].join("|")!==old){i.updated=Date.now();return true;}return false;}
-function dedupItems(){const by={},drop=new Set();S.items.forEach(i=>{const n=last10(i.phone);if(!n)return;const o=by[n];if(!o){by[n]=i;return;}const nw=(i.updated||0)>=(o.updated||0)?i:o,ol=nw===i?o:i;if(nw.folder==="inquiry"&&ol.folder&&ol.folder!=="inquiry"){["folder","talkOn","talkNote","visitOn","delFrom","baatSince","fuLast","fuCount","size","prod","qBy"].forEach(k=>{if(ol[k]!==undefined)nw[k]=ol[k];});nw.isNew=false;nw.msgAlert=1;}
+function dedupItems(){const by={},drop=new Set();S.items.forEach(i=>{const n=last10(i.phone);if(!n)return;const o=by[n];if(!o){by[n]=i;return;}const nw=(i.updated||0)>=(o.updated||0)?i:o,ol=nw===i?o:i;["fuLast","fuCount","fmAt"].forEach(k=>{nw[k]=Math.max(Number(nw[k])||0,Number(ol[k])||0)});nw.calls=mergeArr(nw.calls,ol.calls);if(nw.folder==="inquiry"&&ol.folder&&ol.folder!=="inquiry"){["folder","talkOn","talkNote","visitOn","delFrom","baatSince","fuLast","fuCount","size","prod","qBy"].forEach(k=>{if(ol[k]!==undefined)nw[k]=ol[k];});nw.isNew=false;nw.msgAlert=1;}
   ["calls","notes","payments","chat"].forEach(f=>{if(ol[f]&&ol[f].length)nw[f]=mergeArr(ol[f],nw[f]||[]);});["quotes","recs"].forEach(f=>{if(ol[f]&&ol[f].length){const s=new Set((nw[f]||[]).map(x=>x&&x.id||JSON.stringify(x)));nw[f]=(nw[f]||[]).concat(ol[f].filter(x=>!s.has(x&&x.id||JSON.stringify(x))));}});if(!nw.name&&ol.name)nw.name=ol.name;if(!nw.sid&&ol.sid)nw.sid=ol.sid;if(!nw.final&&ol.final)nw.final=ol.final;
   drop.add(ol);by[n]=nw;});if(drop.size)S.items=S.items.filter(i=>!drop.has(i));return drop.size;}
 function inqStaff(){let c=0;S.items.forEach(l=>{if(l.folder==="inquiry"&&l.ownerF!=="inquiry"&&(lastBy(l)==="staff"||l.qBy==="staff")){l.folder="staff";l._lf="staff";l.isNew=false;(l.notes=l.notes||[]).push({t:new Date().toISOString(),text:"🧑 Staff ne baat ki — Staff ki party mein gayi"});l.updated=Date.now();c++;}});return c;}
-function normItems(){inqStaff();S.items=S.items.filter(i=>last10(i.phone)||i.folder!=="inquiry"||(i.calls&&i.calls.length)||(i.notes&&i.notes.length)||(i.quotes&&i.quotes.length));dedupItems();const ok=FOLDERS.map(f=>f[0]);S.items.forEach(i=>{if(i.folder==="important")i.folder="jaldi";if(i.folder==="fu10")i.folder=(i.notes||[]).some(n=>/Quotation/i.test(n.text||""))?"quote":(i.fuFrom||"baat");{const nf=mapOld(i);if(nf!==i.folder){i.folder=nf;i.updated=Date.now();}}if(i.folder==="vdone"&&!i.visitOn&&!i.vMig){i.vMig=1;i.visitOn=i.talkOn||"";i.talkOn="";}if(!ok.includes(i.folder))i.folder="inquiry";i.calls=i.calls||[];i.notes=i.notes||[];i.payments=i.payments||[];if(!i.qBy&&qCount(i)){const lq=(i.notes||[]).filter(n=>/Quotation/i.test(n.text||"")).slice(-1)[0];i.qBy=/\(Staff\)\s*$|staff/i.test(lq.text||"")?"staff":"owner";}if((i.fuCount||0)>0&&!i.fuBy)i.fuBy=i.notes.some(n=>/^📤 WhatsApp follow-up bheja/.test(n.text||""))?"owner":"staff";i.created=i.created||new Date().toISOString();retroTag(i);if(["s","m","l","xl"].includes(i.size)){const old=i.size;i.size="";if(!i.sizeManual)autoTag(i);if(!i.size)i.size={s:"30",m:"60",l:"120",xl:"150"}[old];}autoTag(i);});}
+function normItems(){inqStaff();fuApply();S.items=S.items.filter(i=>last10(i.phone)||i.folder!=="inquiry"||(i.calls&&i.calls.length)||(i.notes&&i.notes.length)||(i.quotes&&i.quotes.length));dedupItems();const ok=FOLDERS.map(f=>f[0]);S.items.forEach(i=>{if(i.folder==="important")i.folder="jaldi";if(i.folder==="fu10")i.folder=(i.notes||[]).some(n=>/Quotation/i.test(n.text||""))?"quote":(i.fuFrom||"baat");{const nf=mapOld(i);if(nf!==i.folder){i.folder=nf;i.updated=Date.now();}}if(i.folder==="vdone"&&!i.visitOn&&!i.vMig){i.vMig=1;i.visitOn=i.talkOn||"";i.talkOn="";}if(!ok.includes(i.folder))i.folder="inquiry";i.calls=i.calls||[];i.notes=i.notes||[];i.payments=i.payments||[];if(!i.qBy&&qCount(i)){const lq=(i.notes||[]).filter(n=>/Quotation/i.test(n.text||"")).slice(-1)[0];i.qBy=/\(Staff\)\s*$|staff/i.test(lq.text||"")?"staff":"owner";}if((i.fuCount||0)>0&&!i.fuBy)i.fuBy=i.notes.some(n=>/^📤 WhatsApp follow-up bheja/.test(n.text||""))?"owner":"staff";i.created=i.created||new Date().toISOString();retroTag(i);if(["s","m","l","xl"].includes(i.size)){const old=i.size;i.size="";if(!i.sizeManual)autoTag(i);if(!i.size)i.size={s:"30",m:"60",l:"120",xl:"150"}[old];}autoTag(i);});}
 function load(){try{const r=localStorage.getItem(KEY);if(r)S=Object.assign(S,JSON.parse(r));}catch(e){}normItems();}
 function save(){try{if(!window.__pulling)S.items.forEach(i=>{if(i.folder==="nophone2"&&i._lf!=="nophone2"&&!(i.np2Since>(i.updated||0)-60000))i.np2Since=Date.now();if(i._lf!==i.folder){i.fuDay="";i.fmAt=Date.now();if(i._lf!==undefined)i.ownerF=i.folder;else if(!i.ownerF&&LOCKABLE.includes(i.folder))i.ownerF=i.folder;i._lf=i.folder;}});if(S.purged)S.items.forEach(i=>{const k=last10(i.phone);if(k&&S.purged[k]&&(i.updated||0)>S.purged[k])delete S.purged[k];});localStorage.setItem(KEY,JSON.stringify(S));setTimeout(srvPushDirty,1500);return true;}catch(e){toast("Save nahi hua! Storage bhar gaya ho sakta hai.");return false;}}
 const $=id=>document.getElementById(id);
@@ -240,7 +243,7 @@ function smartSearch(qq){const all=S.items;
   const qd=qq.replace(/\D/g,""),q10=qd.length>=10?qd.slice(-10):qd;
   return all.filter(i=>(i.name+" "+i.phone+" "+i.message+" "+(i.talkNote||"")+" "+(i.notes||[]).map(x=>x.text).join(" ")+" "+(i.quotes||[]).map(q=>(q.title||"")+" "+q.name).join(" ")).toLowerCase().includes(qq)||(q10.length>=4&&String(i.phone||"").replace(/\D/g,"").includes(q10)));}
 function render(){
-  if(fixCalled()){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+  window.__fl=fuLog();fuApply();if(fixCalled()){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
   renderTabs();
   const qq=q.trim().toLowerCase();
   if(tab==="rep"){showReport();return;}
@@ -248,7 +251,7 @@ function render(){
   if(fsize)rows=rows.filter(i=>i.size===fsize);if(fprod)rows=rows.filter(i=>i.prod===fprod);
   if(qq){rows=smartSearch(qq);}
   if(OPEN.includes(tab)&&!qq&&!fsize&&!fprod)rows.sort((a,b)=>fuNext(a)-fuNext(b));else if(DATE_F.includes(tab)&&!qq&&!fsize&&!fprod)rows.sort((a,b)=>(tdDue(b)-tdDue(a))||String(a.talkOn||"9").localeCompare(String(b.talkOn||"9")));
-  else if((tab==="fud"||tab==="fus")&&!qq)rows.sort((a,b)=>(b.fuLast||0)-(a.fuLast||0));else if(tab==="fu"&&!qq)rows.sort((a,b)=>((touchedToday(b)?lastTouch(b):0)-(touchedToday(a)?lastTouch(a):0))||(fuNext(a)-fuNext(b)));else rows.sort((a,b)=>(b.updated||0)-(a.updated||0));
+  else if((tab==="fud"||tab==="fus")&&!qq)rows.sort((a,b)=>(b.fuLast||0)-(a.fuLast||0));else if(tab==="fu"&&!qq)rows.sort((a,b)=>((b.msgAlert?1:0)-(a.msgAlert?1:0))||((touchedToday(b)?lastTouch(b):0)-(touchedToday(a)?lastTouch(a):0))||(fuNext(a)-fuNext(b)));else rows.sort((a,b)=>(b.updated||0)-(a.updated||0));
   if(tab!=="fu"&&tab!=="inquiry")rows.sort((a,b)=>(b.msgAlert?1:0)-(a.msgAlert?1:0));
   {const k=tab+"|"+qq+"|"+fsize+"|"+fprod;if(window.__ordK===k&&window.__ord&&tab!=="fu"){const pos=new Map(window.__ord.map((id,n)=>[id,n]));rows.sort((a,b)=>(pos.has(a.id)?pos.get(a.id):-1)-(pos.has(b.id)?pos.get(b.id):-1));}window.__ordK=k;window.__ord=rows.map(i=>i.id);}
   if(!rows.length){$("list").innerHTML=`<div class="empty">${qq?"Kuch nahi mila":(tab==="fud"?"Aapne abhi tak kisi ko follow-up nahi bheja":tab==="fus"?"Staff ne abhi tak kisi ko follow-up nahi bheja":tab==="fu"?"✅ Aaj koi follow-up baaki nahi.<br><small>\"Phone nahi utha\" har 10 din, \"Baat chal rahi\" aapki tareekh par (ya har 10 din). Khud ki Quotation aur Visit aa gayi apne folder mein hi upar aati hain.</small>":"Is folder mein abhi kuch nahi")}</div>`;return;}
@@ -301,7 +304,7 @@ document.querySelectorAll("[data-qd]").forEach(b=>b.onclick=()=>{const[id,k]=b.d
   document.querySelectorAll("[data-px]").forEach(b=>b.onclick=()=>{if(!confirm("Hamesha ke liye hata doge? Wapas nahi aayega."))return;const gone=byId(b.dataset.px);if(gone){const pn=Date.now();S.purged=S.purged||{};S.gone=S.gone||{};S.gone[gone.id]=pn;if(gone.sid)S.gone[gone.sid]=pn;if(last10(gone.phone))S.purged[last10(gone.phone)]=pn;srvPush([{id:gone.sid||gone.id,phone:gone.phone,purged:true,updated:pn}]);}S.items=S.items.filter(x=>x.id!==b.dataset.px);save();render();toast("Poora delete ho gaya");});
   document.querySelectorAll("[data-mv]").forEach(b=>b.onclick=()=>{const [id,f]=b.dataset.mv.split("|");moveTo(id,f);});
   document.querySelectorAll("[data-td]").forEach(b=>b.onclick=()=>{const x=byId(b.dataset.td);askDate(b.dataset.td,x&&DATE_ASK.includes(x.folder)?x.folder:"tdate");});
-  document.querySelectorAll("[data-fu]").forEach(a=>a.addEventListener("click",ev=>{const i=byId(a.dataset.fu);if(!i)return;ev.preventDefault();const go=a.getAttribute("href");i.talkOn=DATE_F.includes(i.folder)?dPlus(10):"";i.fuLast=Date.now();i.fuDay=today();i.fuCount=(i.fuCount||0)+1;i.fuBy="owner";(i.notes=i.notes||[]).push({t:new Date().toISOString(),text:"📤 WhatsApp follow-up bheja"});i.msgAlert=0;i.isNew=false;i.updated=Date.now();save();try{srvPushDirty();}catch(e){}const y=window.scrollY;render();window.scrollTo(0,y);setTimeout(()=>{location.href=go;},250);toast(i.folder==="imp"?"✅ Follow-up ho gaya":"✅ Follow-up ho gaya · 12 ghante Aaj ke Follow-up mein rahegi, phir apne folder mein");}));
+  document.querySelectorAll("[data-fu]").forEach(a=>a.addEventListener("click",ev=>{const i=byId(a.dataset.fu);if(!i)return;ev.preventDefault();const go=a.getAttribute("href");fuLogAdd(i);i.talkOn=DATE_F.includes(i.folder)?dPlus(10):"";i.fuLast=Date.now();i.fuDay=today();i.fuCount=(i.fuCount||0)+1;i.fuBy="owner";(i.notes=i.notes||[]).push({t:new Date().toISOString(),text:"📤 WhatsApp follow-up bheja"});i.msgAlert=0;i.isNew=false;i.updated=Date.now();save();try{srvPushDirty();}catch(e){}const y=window.scrollY;render();window.scrollTo(0,y);setTimeout(()=>{location.href=go;},250);toast(i.folder==="imp"?"✅ Follow-up ho gaya":"✅ Follow-up ho gaya · 12 ghante Aaj ke Follow-up mein rahegi, phir apne folder mein");}));
   document.querySelectorAll("[data-fq]").forEach(b=>b.onclick=()=>{const i=byId(b.dataset.fq);if(!i)return;const q=(i.quotes||[]).slice(-1)[0];if(!q)return;fileBlob(q).then(bl=>{const f=new File([bl],q.name,{type:q.type||"application/pdf"});if(navigator.canShare&&navigator.canShare({files:[f]}))navigator.share({files:[f],text:"Paramount Technology - Quotation"}).catch(()=>{});else toast("Share nahi ho paya");}).catch(()=>toast("PDF nahi mili"));});
 document.querySelectorAll("[data-fs]").forEach(b=>b.onclick=()=>{const i=byId(b.dataset.fs);if(!i)return;i.talkOn=DATE_F.includes(i.folder)?dPlus(10):"";i.fuLast=Date.now();i.fuDay=today();i.updated=Date.now();save();render();toast("10 din baad phir aayega");});
 }
