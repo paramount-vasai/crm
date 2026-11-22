@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Paramount CRM v62</title>
+<title>Paramount CRM v69</title>
 <style>
 :root{--bg:#f3f5f9;--card:#fff;--ink:#1b2430;--mute:#6b7685;--line:#e2e7ef;--pri:#123b6b;--acc:#1f8a4c;--warn:#c0392b;--chip:#e8eef6}
 *{box-sizing:border-box}
@@ -51,7 +51,7 @@ label{display:block;font-size:12.5px;color:var(--mute);margin:10px 0 3px}
 </head>
 <body>
 <header>
-  <div class="row"><h1>Paramount CRM</h1>
+  <div class="row"><h1>Paramount CRM <span style="font-size:11px;opacity:.7">v69</span></h1>
     <button id="bSync" title="Sheet se naye enquiry lao">⟳ Sync</button>
     <button id="bMenu">☰</button></div>
   <input id="search" type="search" placeholder="Naam / mobile / 120 BPM water se dhundo...">
@@ -301,7 +301,7 @@ document.querySelectorAll("[data-qd]").forEach(b=>b.onclick=()=>{const[id,k]=b.d
   document.querySelectorAll("[data-px]").forEach(b=>b.onclick=()=>{if(!confirm("Hamesha ke liye hata doge? Wapas nahi aayega."))return;const gone=byId(b.dataset.px);if(gone){const pn=Date.now();S.purged=S.purged||{};S.gone=S.gone||{};S.gone[gone.id]=pn;if(gone.sid)S.gone[gone.sid]=pn;if(last10(gone.phone))S.purged[last10(gone.phone)]=pn;srvPush([{id:gone.sid||gone.id,phone:gone.phone,purged:true,updated:pn}]);}S.items=S.items.filter(x=>x.id!==b.dataset.px);save();render();toast("Poora delete ho gaya");});
   document.querySelectorAll("[data-mv]").forEach(b=>b.onclick=()=>{const [id,f]=b.dataset.mv.split("|");moveTo(id,f);});
   document.querySelectorAll("[data-td]").forEach(b=>b.onclick=()=>{const x=byId(b.dataset.td);askDate(b.dataset.td,x&&DATE_ASK.includes(x.folder)?x.folder:"tdate");});
-  document.querySelectorAll("[data-fu]").forEach(a=>a.addEventListener("click",()=>{const i=byId(a.dataset.fu);if(!i)return;i.talkOn=DATE_F.includes(i.folder)?dPlus(10):"";i.fuLast=Date.now();i.fuDay=today();i.fuCount=(i.fuCount||0)+1;i.fuBy="owner";(i.notes=i.notes||[]).push({t:new Date().toISOString(),text:"📤 WhatsApp follow-up bheja"});i.updated=Date.now();save();setTimeout(render,800);toast(i.folder==="imp"?"✅ Follow-up ho gaya":"✅ Follow-up ho gaya · 12 ghante Aaj ke Follow-up mein rahegi, phir apne folder mein");}));
+  document.querySelectorAll("[data-fu]").forEach(a=>a.addEventListener("click",ev=>{const i=byId(a.dataset.fu);if(!i)return;ev.preventDefault();const go=a.getAttribute("href");i.talkOn=DATE_F.includes(i.folder)?dPlus(10):"";i.fuLast=Date.now();i.fuDay=today();i.fuCount=(i.fuCount||0)+1;i.fuBy="owner";(i.notes=i.notes||[]).push({t:new Date().toISOString(),text:"📤 WhatsApp follow-up bheja"});i.msgAlert=0;i.isNew=false;i.updated=Date.now();save();try{srvPushDirty();}catch(e){}const y=window.scrollY;render();window.scrollTo(0,y);setTimeout(()=>{location.href=go;},250);toast(i.folder==="imp"?"✅ Follow-up ho gaya":"✅ Follow-up ho gaya · 12 ghante Aaj ke Follow-up mein rahegi, phir apne folder mein");}));
   document.querySelectorAll("[data-fq]").forEach(b=>b.onclick=()=>{const i=byId(b.dataset.fq);if(!i)return;const q=(i.quotes||[]).slice(-1)[0];if(!q)return;fileBlob(q).then(bl=>{const f=new File([bl],q.name,{type:q.type||"application/pdf"});if(navigator.canShare&&navigator.canShare({files:[f]}))navigator.share({files:[f],text:"Paramount Technology - Quotation"}).catch(()=>{});else toast("Share nahi ho paya");}).catch(()=>toast("PDF nahi mili"));});
 document.querySelectorAll("[data-fs]").forEach(b=>b.onclick=()=>{const i=byId(b.dataset.fs);if(!i)return;i.talkOn=DATE_F.includes(i.folder)?dPlus(10):"";i.fuLast=Date.now();i.fuDay=today();i.updated=Date.now();save();render();toast("10 din baad phir aayega");});
 }
@@ -1020,8 +1020,8 @@ async function srvPull(manual){if(!srvOk())return;try{const r=await fetch(S.srvU
     let l=S.items.find(x=>x.id===s.id||x.sid===s.id)||(last10(s.phone)?S.items.find(x=>last10(x.phone)===last10(s.phone)):null);
     if(!l){l=Object.assign({},s,{sid:s.id,id:uid(),calls:s.calls||[],notes:s.notes||[],payments:s.payments||[]});S.items.push(l);n++;return;}
     const oQ=qCount(l),oF0=l.folder;l.sid=s.id;l.calls=mergeArr(l.calls,s.calls);l.notes=mergeArr(l.notes,s.notes);if(qCount(l)>oQ&&l.qBy!=="owner")l.qBy="staff";const oLock=isLocked(l);
-    if((s.updated||0)>(l.updated||0)){const oF=l.folder,oFu=Number(l.fuLast)||0;["folder","name","fuLast","fuCount","baatSince","size","prod","qprods","sizeManual","visitAt","remind","isNew","msgAlert","lastQuote","talkOn","talkNote","visitOn","delFrom","qBy","kqReq","kqReqBy","kqNew","sfiles","np2Since","fmAt"].forEach(k=>{if(s[k]!==undefined)l[k]=s[k];});if(!l.phone&&s.phone)l.phone=s.phone;l.updated=s.updated;n++;
-      if((Number(s.fuLast)||0)>oFu)l.fuBy="staff";
+    if((s.updated||0)>(l.updated||0)){const oF=l.folder,oFu=Number(l.fuLast)||0,oFc=Number(l.fuCount)||0,oFm=Number(l.fmAt)||0,oFd=l.fuDay||"";["folder","name","fuLast","fuCount","baatSince","size","prod","qprods","sizeManual","visitAt","remind","isNew","msgAlert","lastQuote","talkOn","talkNote","visitOn","delFrom","qBy","kqReq","kqReqBy","kqNew","sfiles","np2Since","fmAt"].forEach(k=>{if(s[k]!==undefined)l[k]=s[k];});if(!l.phone&&s.phone)l.phone=s.phone;l.updated=s.updated;n++;
+      if((Number(s.fuLast)||0)>oFu)l.fuBy="staff";l.fuLast=Math.max(oFu,Number(l.fuLast)||0);l.fuCount=Math.max(oFc,Number(l.fuCount)||0);l.fmAt=Math.max(oFm,Number(l.fmAt)||0);if(oFd>(l.fuDay||""))l.fuDay=oFd;
       l.folder=mapOld(l);if(l.folder!==oF)l.fmAt=Math.max(Number(l.fmAt)||0,Date.now());const okRoute=l.folder===oF||oF==="deleted"||(ROUTES[oF]||[]).includes(l.folder);if(l.folder==="deleted"&&oF!=="deleted")l.delFrom=oF;
       if(l.folder!==oF&&(oLock||!okRoute||l.folder==="inquiry"||(MINE.includes(l.folder)&&!MINE.includes(oF)))){(l.notes=l.notes||[]).push({t:new Date().toISOString(),text:"🔒 Staff ne folder badla tha — wapas laaya ("+(oLock||MINE.includes(l.folder)?"ye folder sirf aap badal sakte ho":(l.folder==="inquiry"?"purani party Inquiry mein nahi jaati":"ye rasta allowed nahi"))+")"});l.folder=oF;l.updated=Date.now();rp.push(l);}
       else if(l.ownerF&&l.folder!==l.ownerF){(l.notes=l.notes||[]).push({t:new Date().toISOString(),text:"🔒 Staff ne folder badla tha — aapne jahan rakha tha wahin wapas (\""+fName2(l.ownerF)+"\")"});l.folder=l.ownerF;l.updated=Date.now();rp.push(l);}}
@@ -1096,6 +1096,6 @@ document.addEventListener("click",async e=>{const id=e.target&&e.target.id;
 });})();
 window.__crm={parseCSV,ingestRows,get S(){return S;},set S(v){S=v;},render};
 </script>
-<script>(function(){var t=0;window.addEventListener("scroll",function(){clearTimeout(t);t=setTimeout(function(){try{localStorage.setItem("pt-y",String(window.scrollY))}catch(e){}},300)});window.addEventListener("load",function(){setTimeout(function(){try{var y=+localStorage.getItem("pt-y")||0;if(y)window.scrollTo(0,y)}catch(e){}},600)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible"){try{var y=+localStorage.getItem("pt-y")||0;var k=localStorage.getItem("pt-tab");if(k&&typeof tab!=="undefined"&&tab!==k){tab=k;render();}if(y)setTimeout(function(){window.scrollTo(0,y)},200)}catch(e){}}})})();</script>
+<script>(function(){var t=0;window.addEventListener("scroll",function(){clearTimeout(t);t=setTimeout(function(){try{localStorage.setItem("pt-y",String(window.scrollY))}catch(e){}},300)});window.addEventListener("load",function(){setTimeout(function(){try{var y=+localStorage.getItem("pt-y")||0;if(y)window.scrollTo(0,y)}catch(e){}},600)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible"){try{var y=+localStorage.getItem("pt-y")||0;var k=localStorage.getItem("pt-tab");if(k&&typeof tab!=="undefined"){tab=k;render();}if(y)setTimeout(function(){window.scrollTo(0,y)},200)}catch(e){}}})})();</script>
 </body>
 </html>
