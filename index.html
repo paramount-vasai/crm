@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Paramount CRM v73</title>
+<title>Paramount CRM v74</title>
 <style>
 :root{--bg:#f3f5f9;--card:#fff;--ink:#1b2430;--mute:#6b7685;--line:#e2e7ef;--pri:#123b6b;--acc:#1f8a4c;--warn:#c0392b;--chip:#e8eef6}
 *{box-sizing:border-box}
@@ -51,7 +51,7 @@ label{display:block;font-size:12.5px;color:var(--mute);margin:10px 0 3px}
 </head>
 <body>
 <header>
-  <div class="row"><h1>Paramount CRM <span style="font-size:11px;opacity:.7">v73<span id="szTag"></span></span></h1>
+  <div class="row"><h1>Paramount CRM <span style="font-size:11px;opacity:.7">v74<span id="szTag"></span></span></h1>
     <button id="bSync" title="Sheet se naye enquiry lao">⟳ Sync</button>
     <button id="bMenu">☰</button></div>
   <input id="search" type="search" placeholder="Naam / mobile / 120 BPM water se dhundo...">
@@ -203,7 +203,10 @@ function dedupItems(){const by={},drop=new Set();S.items.forEach(i=>{const n=las
 function inqStaff(){let c=0;S.items.forEach(l=>{if(l.folder==="inquiry"&&l.ownerF!=="inquiry"&&(lastBy(l)==="staff"||l.qBy==="staff")){l.folder="staff";l._lf="staff";l.isNew=false;(l.notes=l.notes||[]).push({t:new Date().toISOString(),text:"🧑 Staff ne baat ki — Staff ki party mein gayi"});l.updated=Date.now();c++;}});return c;}
 function normItems(){inqStaff();fuApply();S.items=S.items.filter(i=>last10(i.phone)||i.folder!=="inquiry"||(i.calls&&i.calls.length)||(i.notes&&i.notes.length)||(i.quotes&&i.quotes.length));dedupItems();const ok=FOLDERS.map(f=>f[0]);S.items.forEach(i=>{if(i.folder==="important")i.folder="jaldi";if(i.folder==="fu10")i.folder=(i.notes||[]).some(n=>/Quotation/i.test(n.text||""))?"quote":(i.fuFrom||"baat");{const nf=mapOld(i);if(nf!==i.folder){i.folder=nf;i.updated=Date.now();}}if(i.folder==="vdone"&&!i.visitOn&&!i.vMig){i.vMig=1;i.visitOn=i.talkOn||"";i.talkOn="";}if(!ok.includes(i.folder))i.folder="inquiry";i.calls=i.calls||[];i.notes=i.notes||[];i.payments=i.payments||[];if(!i.qBy&&qCount(i)){const lq=(i.notes||[]).filter(n=>/Quotation/i.test(n.text||"")).slice(-1)[0];i.qBy=/\(Staff\)\s*$|staff/i.test(lq.text||"")?"staff":"owner";}if((i.fuCount||0)>0&&!i.fuBy)i.fuBy=i.notes.some(n=>/^📤 WhatsApp follow-up bheja/.test(n.text||""))?"owner":"staff";i.created=i.created||new Date().toISOString();retroTag(i);if(["s","m","l","xl"].includes(i.size)){const old=i.size;i.size="";if(!i.sizeManual)autoTag(i);if(!i.size)i.size={s:"30",m:"60",l:"120",xl:"150"}[old];}autoTag(i);});}
 function load(){try{const r=localStorage.getItem(KEY);if(r)S=Object.assign(S,JSON.parse(r));}catch(e){}normItems();}
-function save(){try{if(!window.__pulling)S.items.forEach(i=>{if(i.folder==="nophone2"&&i._lf!=="nophone2"&&!(i.np2Since>(i.updated||0)-60000))i.np2Since=Date.now();if(i._lf!==i.folder){i.fuDay="";i.fmAt=Date.now();if(i._lf!==undefined)i.ownerF=i.folder;else if(!i.ownerF&&LOCKABLE.includes(i.folder))i.ownerF=i.folder;i._lf=i.folder;}});if(S.purged)S.items.forEach(i=>{const k=last10(i.phone);if(k&&S.purged[k]&&(i.updated||0)>S.purged[k])delete S.purged[k];});if(!putS()){compactS();if(!putS()){storeAlarm();return false;}}setTimeout(srvPushDirty,1500);return true;}catch(e){storeAlarm();return false;}}
+function save(){try{if(!window.__pulling)S.items.forEach(i=>{if(i.folder==="nophone2"&&i._lf!=="nophone2"&&!(i.np2Since>(i.updated||0)-60000))i.np2Since=Date.now();if(i._lf!==i.folder){i.fuDay="";i.fmAt=Date.now();if(i._lf!==undefined)i.ownerF=i.folder;else if(!i.ownerF&&LOCKABLE.includes(i.folder))i.ownerF=i.folder;i._lf=i.folder;}});if(S.purged)S.items.forEach(i=>{const k=last10(i.phone);if(k&&S.purged[k]&&(i.updated||0)>S.purged[k])delete S.purged[k];});S.savedAt=Date.now();putIDB();if(!putS()){if(!putLite()){storeAlarm();return false;}}setTimeout(srvPushDirty,1500);return true;}catch(e){storeAlarm();return false;}}
+function putIDB(){if(!window.__idbReady)return;try{const o=Object.assign({},S);delete o.__lite;fput("__state__",JSON.stringify(o)).catch(()=>storeAlarm());}catch(e){}}
+function putLite(){try{const o=Object.assign({},S,{__lite:1,seen:[]});o.items=S.items.map(i=>{const c=Object.assign({},i);delete c.chat;return c;});const j=JSON.stringify(o);localStorage.setItem(KEY,j);const h=document.getElementById("szTag");if(h)h.textContent=" · "+(j.length/1e6).toFixed(1)+"MB 💾";const b=document.getElementById("stAlarm");if(b)b.remove();return true;}catch(e){return false;}}
+async function bootIDB(){try{const raw=await fget("__state__");if(raw){const D=JSON.parse(raw);if(S.savedAt&&(D.savedAt||0)>S.savedAt){Object.keys(D).forEach(k=>S[k]=D[k]);}else{const m={};(D.items||[]).forEach(x=>m[x.id]=x);S.items.forEach(i=>{if(!i.chat&&m[i.id]&&m[i.id].chat)i.chat=m[i.id].chat;});if((D.seen||[]).length>(S.seen||[]).length)S.seen=D.seen;}}}catch(e){}delete S.__lite;window.__idbReady=true;try{normItems();}catch(e){}save();try{const y=window.scrollY;render();window.scrollTo(0,y);}catch(e){}}
 function putS(){try{const j=JSON.stringify(S);localStorage.setItem(KEY,j);window.__sz=j.length;const h=document.getElementById("szTag");if(h)h.textContent=" · "+(j.length/1e6).toFixed(1)+"MB";const b=document.getElementById("stAlarm");if(b)b.remove();return true;}catch(e){return false;}}
 function compactS(){S.seen=(S.seen||[]).slice(-2500);S.items.forEach(i=>{if(i.chat&&i.chat.length>12)i.chat=i.chat.slice(-12);if(i.notes&&i.notes.length>60)i.notes=i.notes.slice(-60);});try{["pt-y"].forEach(k=>localStorage.removeItem(k));}catch(e){}}
 function storeAlarm(){if(document.getElementById("stAlarm"))return;const d=document.createElement("div");d.id="stAlarm";d.style.cssText="position:fixed;left:0;right:0;bottom:0;z-index:9999;background:#c0392b;color:#fff;padding:12px;font-weight:700;text-align:center";d.textContent="⚠️ Phone mein CRM ki jagah bhar gayi — badlav save nahi ho rahe. Claude ko is ki photo bhejo.";document.body.appendChild(d);}
@@ -999,7 +1002,7 @@ async function getRows(u0){
   try{return await gvizRows(u0);}
   catch(e2){throw new Error(e1.message+" / "+e2.message);}
 }
-async function sync(manual){
+async function sync(manual){if(!window.__idbReady){setTimeout(()=>sync(manual),700);return;}
   if(!S.sheetUrl){if(manual){toast("Pehle Settings (☰) mein Sheet ka link daalo");}return;}
   try{
     const n=ingestRows(await getRows(S.sheetUrl));
@@ -1019,7 +1022,7 @@ function strip(i){const o={};for(const k in i)if(k!=="chat"&&k!=="recs"&&k!=="qu
 async function srvPush(items){if(!srvOk()||!items.length)return;try{const r=await fetch(S.srvUrl,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({crm:"push",pin:S.srvPin,items:items.map(strip)})});const j=await r.json();if(j.err)toast("Sync: "+j.err);}catch(e){}}
 function srvPushDirty(){if(!srvOk())return;const t=S.lastPush||0,d=S.items.filter(i=>(i.updated||0)>t);if(!d.length)return;S.lastPush=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}srvPush(d);}
 function mergeArr(a,b){const seen={},out=[];(a||[]).concat(b||[]).forEach(x=>{const k=JSON.stringify([x.t||x.date||"",x.text||x.note||x.amt||""]);if(!seen[k]){seen[k]=1;out.push(x);}});out.sort((x,y)=>String(x.t||x.date||"").localeCompare(String(y.t||y.date||"")));return out;}
-async function srvPull(manual){if(!srvOk())return;try{const r=await fetch(S.srvUrl+"?crm=pull&v=19&pin="+encodeURIComponent(S.srvPin)+"&t="+Date.now());const j=await r.json();if(j.err){if(manual)toast("Sync: "+j.err);return;}
+async function srvPull(manual){if(!srvOk())return;if(!window.__idbReady){setTimeout(()=>srvPull(manual),700);return;}try{const r=await fetch(S.srvUrl+"?crm=pull&v=19&pin="+encodeURIComponent(S.srvPin)+"&t="+Date.now());const j=await r.json();if(j.err){if(manual)toast("Sync: "+j.err);return;}
   let n=0;const rp=[];{const bp={};(j.items||[]).forEach(s=>{if(!s||!s.id)return;const k=last10(s.phone);if(!k)return;if(!bp[k]||(Number(s.updated)||0)>=(Number(bp[k].updated)||0))bp[k]=s;});j.items=(j.items||[]).filter(s=>s&&(!last10(s.phone)||bp[last10(s.phone)]===s));}
   (j.items||[]).forEach(s=>{if(!s||!s.id)return;
     {const pk0=last10(s.phone),tb=(S.gone&&S.gone[s.id])||(pk0&&S.purged&&S.purged[pk0]);if(tb&&!s.purged&&(Number(s.updated)||0)>tb){if(S.gone)delete S.gone[s.id];if(pk0&&S.purged)delete S.purged[pk0];}else if(tb&&!s.purged){rp.push({id:s.id,phone:s.phone,purged:true,purgedAt:tb,updated:Date.now()});const b4=S.items.length;S.items=S.items.filter(x=>!(x.sid===s.id||x.id===s.id||(pk0&&S.purged&&S.purged[pk0]&&last10(x.phone)===pk0&&(x.updated||0)<=S.purged[pk0])));if(S.items.length<b4)n++;return;}}
@@ -1087,7 +1090,7 @@ $("bImportBtn").onclick=()=>$("fImport").click();
 $("fImport").onchange=e=>{if(e.target.files[0])doImport(e.target.files[0]);e.target.value="";};
 [ "mDetail","mMenu","mQuote","mTd" ].forEach(id=>$(id).addEventListener("click",e=>{if(e.target.id===id){if(id==="mTd"&&window.__acFinish){window.__acFinish();return;}$(id).classList.remove("on");render();}}));
 
-load();render();
+load();render();bootIDB();
 if(S.sheetUrl){sync(false);setInterval(()=>sync(false),120000);}
 if(srvOk()){srvPull(false);setInterval(()=>srvPull(false),120000);}
 function afterCall(){let p;try{p=JSON.parse(localStorage.getItem("pt-pending-rec")||"null");localStorage.removeItem("pt-pending-rec");}catch(e){}
