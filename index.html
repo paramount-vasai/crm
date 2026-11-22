@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Paramount CRM v74</title>
+<title>Paramount CRM v75</title>
 <style>
 :root{--bg:#f3f5f9;--card:#fff;--ink:#1b2430;--mute:#6b7685;--line:#e2e7ef;--pri:#123b6b;--acc:#1f8a4c;--warn:#c0392b;--chip:#e8eef6}
 *{box-sizing:border-box}
@@ -51,7 +51,7 @@ label{display:block;font-size:12.5px;color:var(--mute);margin:10px 0 3px}
 </head>
 <body>
 <header>
-  <div class="row"><h1>Paramount CRM <span style="font-size:11px;opacity:.7">v74<span id="szTag"></span></span></h1>
+  <div class="row"><h1>Paramount CRM <span style="font-size:11px;opacity:.7">v75<span id="szTag"></span></span></h1>
     <button id="bSync" title="Sheet se naye enquiry lao">⟳ Sync</button>
     <button id="bMenu">☰</button></div>
   <input id="search" type="search" placeholder="Naam / mobile / 120 BPM water se dhundo...">
@@ -161,6 +161,7 @@ const FU_F=["staff"],FU_X=["inquiry","khud","vdone","confirm","spare","deleted"]
 setTimeout(()=>{try{const j=localStorage.getItem(KEY)||"";const h=document.getElementById("szTag");if(h)h.textContent=" · "+(j.length/1e6).toFixed(1)+"MB";}catch(e){}},1500);
 function fuLog(){try{return JSON.parse(localStorage.getItem("pt-fulog")||"{}")}catch(e){return {}}}
 function fuLogAdd(i){const L=fuLog(),k=last10(i.phone)||i.id,now=Date.now();L[k]=now;Object.keys(L).forEach(x=>{if(now-L[x]>13*3600000)delete L[x];});try{localStorage.setItem("pt-fulog",JSON.stringify(L))}catch(e){}}
+function fixAlerts(){if(!window.__idbReady)return;S.items.forEach(i=>{if(!i.msgAlert||!i.chat||!i.chat.length)return;const lc=i.chat.filter(m=>m.who==="c").slice(-1)[0],t=lc?tms(lc.t):0;if(t&&t<=lastTouch(i))i.msgAlert=0;});}
 function fuApply(){const L=fuLog();S.items.forEach(i=>{const t=L[last10(i.phone)||i.id];if(t&&(Number(i.fuLast)||0)<t){i.fuLast=t;i.fuCount=(i.fuCount||0)+1;i.fuBy="owner";i.fuDay=today();}if(t&&DATE_F.includes(i.folder)&&i.talkOn&&i.talkOn<=today())i.talkOn=dPlus(10);});}
 function lastTouch(i){const lc=(i.calls||[]).slice(-1)[0],L=window.__fl||{};return Math.max(Number(i.fuLast)||0,lc?new Date(lc.t).getTime()||0:0,Number(L[last10(i.phone)||i.id])||0);}
 const RECENT=5*3600000;const H12=12*3600000;function touchedToday(i){if(i.folder==="deleted"||i.folder==="imp")return false;const t=lastTouch(i);return !!t&&Date.now()-t<H12;}
@@ -250,7 +251,7 @@ function smartSearch(qq){const all=S.items;
   const qd=qq.replace(/\D/g,""),q10=qd.length>=10?qd.slice(-10):qd;
   return all.filter(i=>(i.name+" "+i.phone+" "+i.message+" "+(i.talkNote||"")+" "+(i.notes||[]).map(x=>x.text).join(" ")+" "+(i.quotes||[]).map(q=>(q.title||"")+" "+q.name).join(" ")).toLowerCase().includes(qq)||(q10.length>=4&&String(i.phone||"").replace(/\D/g,"").includes(q10)));}
 function render(){
-  window.__fl=fuLog();fuApply();if(fixCalled()){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+  window.__fl=fuLog();fuApply();fixAlerts();if(fixCalled()){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
   renderTabs();
   const qq=q.trim().toLowerCase();
   if(tab==="rep"){showReport();return;}
