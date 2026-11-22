@@ -135,7 +135,9 @@ let fby="";
 const fName2=f=>((FOLDERS.find(x=>x[0]===f)||["",f])[1]);
 const isStaffBy=b=>!!(b&&!/owner|aap|maalik|malik/i.test(b));
 function lastBy(i){const lc=(i.calls||[]).slice(-1)[0];return lc?(isStaffBy(lc.by)?"staff":"owner"):"";}
-let tab="inquiry",q="",fsize="",fprod="";
+let tab=(()=>{try{return localStorage.getItem("pt-tab")||"inquiry"}catch(e){return "inquiry"}})(),q="",fsize="",fprod="";
+function fuToday(i){return i.fuDay===today();}
+function inF(i,k){return i.folder===k&&!(fuToday(i)&&!q.trim());}
 /* ---------- Plant size + product (folder se alag, sirf chhantne ke liye) ---------- */
 const SIZES=[["20","20 BPM"],["30","30 BPM"],["40","40 BPM"],["60","60 BPM"],["90","90 BPM"],["120","120 BPM"],["150","150 BPM"],["200","200 BPM"]];
 let chartOpen=false;
@@ -196,7 +198,7 @@ function dedupItems(){const by={},drop=new Set();S.items.forEach(i=>{const n=las
 function inqStaff(){let c=0;S.items.forEach(l=>{if(l.folder==="inquiry"&&l.ownerF!=="inquiry"&&(lastBy(l)==="staff"||l.qBy==="staff")){l.folder="staff";l._lf="staff";l.isNew=false;(l.notes=l.notes||[]).push({t:new Date().toISOString(),text:"🧑 Staff ne baat ki — Staff ki party mein gayi"});l.updated=Date.now();c++;}});return c;}
 function normItems(){inqStaff();S.items=S.items.filter(i=>last10(i.phone)||i.folder!=="inquiry"||(i.calls&&i.calls.length)||(i.notes&&i.notes.length)||(i.quotes&&i.quotes.length));dedupItems();const ok=FOLDERS.map(f=>f[0]);S.items.forEach(i=>{if(i.folder==="important")i.folder="jaldi";if(i.folder==="fu10")i.folder=(i.notes||[]).some(n=>/Quotation/i.test(n.text||""))?"quote":(i.fuFrom||"baat");{const nf=mapOld(i);if(nf!==i.folder){i.folder=nf;i.updated=Date.now();}}if(i.folder==="vdone"&&!i.visitOn&&!i.vMig){i.vMig=1;i.visitOn=i.talkOn||"";i.talkOn="";}if(!ok.includes(i.folder))i.folder="inquiry";i.calls=i.calls||[];i.notes=i.notes||[];i.payments=i.payments||[];if(!i.qBy&&qCount(i)){const lq=(i.notes||[]).filter(n=>/Quotation/i.test(n.text||"")).slice(-1)[0];i.qBy=/\(Staff\)\s*$|staff/i.test(lq.text||"")?"staff":"owner";}if((i.fuCount||0)>0&&!i.fuBy)i.fuBy=i.notes.some(n=>/^📤 WhatsApp follow-up bheja/.test(n.text||""))?"owner":"staff";i.created=i.created||new Date().toISOString();retroTag(i);if(["s","m","l","xl"].includes(i.size)){const old=i.size;i.size="";if(!i.sizeManual)autoTag(i);if(!i.size)i.size={s:"30",m:"60",l:"120",xl:"150"}[old];}autoTag(i);});}
 function load(){try{const r=localStorage.getItem(KEY);if(r)S=Object.assign(S,JSON.parse(r));}catch(e){}normItems();}
-function save(){try{if(!window.__pulling)S.items.forEach(i=>{if(i.folder==="nophone2"&&i._lf!=="nophone2"&&!(i.np2Since>(i.updated||0)-60000))i.np2Since=Date.now();if(i._lf!==i.folder){if(i._lf!==undefined)i.ownerF=i.folder;else if(!i.ownerF&&LOCKABLE.includes(i.folder))i.ownerF=i.folder;i._lf=i.folder;}});if(S.purged)S.items.forEach(i=>{const k=last10(i.phone);if(k&&S.purged[k]&&(i.updated||0)>S.purged[k])delete S.purged[k];});localStorage.setItem(KEY,JSON.stringify(S));setTimeout(srvPushDirty,1500);return true;}catch(e){toast("Save nahi hua! Storage bhar gaya ho sakta hai.");return false;}}
+function save(){try{if(!window.__pulling)S.items.forEach(i=>{if(i.folder==="nophone2"&&i._lf!=="nophone2"&&!(i.np2Since>(i.updated||0)-60000))i.np2Since=Date.now();if(i._lf!==i.folder){if(i._lf!==undefined&&i.fuDay)i.fuDay="";if(i._lf!==undefined)i.ownerF=i.folder;else if(!i.ownerF&&LOCKABLE.includes(i.folder))i.ownerF=i.folder;i._lf=i.folder;}});if(S.purged)S.items.forEach(i=>{const k=last10(i.phone);if(k&&S.purged[k]&&(i.updated||0)>S.purged[k])delete S.purged[k];});localStorage.setItem(KEY,JSON.stringify(S));setTimeout(srvPushDirty,1500);return true;}catch(e){toast("Save nahi hua! Storage bhar gaya ho sakta hai.");return false;}}
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
@@ -208,10 +210,10 @@ function toast(m){const t=$("toast");t.textContent=m;t.style.display="block";cle
 /* ---------- list ---------- */
 function renderTabs(){
   const fc=S.items.filter(i=>fuDue(i)||touchedToday(i)).length;
-  $("tabs").innerHTML=`<button class="tab fu ${fc?"blink":""} ${tab==="fu"?"on":""}" data-t="fu">⏰ Aaj ke Follow-up (${fc})</button>`+(S.srvUrl?`<button class="tab ${tab==="rep"?"on":""}" data-t="rep">📊 Staff ka kaam</button>`:"")+FOLDERS.map(([k,n])=>{const c=S.items.filter(i=>i.folder===k).length,dd=DATE_F.includes(k)?S.items.filter(i=>i.folder===k&&tdDue(i)).length:(OPEN.includes(k)||k==="busyme")?S.items.filter(i=>i.folder===k&&dueNow(i)).length:0;
+  $("tabs").innerHTML=`<button class="tab fu ${fc?"blink":""} ${tab==="fu"?"on":""}" data-t="fu">⏰ Aaj ke Follow-up (${fc})</button>`+(S.srvUrl?`<button class="tab ${tab==="rep"?"on":""}" data-t="rep">📊 Staff ka kaam</button>`:"")+FOLDERS.map(([k,n])=>{const c=S.items.filter(i=>inF(i,k)).length,dd=DATE_F.includes(k)?S.items.filter(i=>i.folder===k&&tdDue(i)).length:(OPEN.includes(k)||k==="busyme")?S.items.filter(i=>i.folder===k&&dueNow(i)).length:0;
     return `<button class="tab ${tab===k?"on":""}${dd?" fu":""}" data-t="${k}">${lockF().includes(k)?"🔒 ":""}${n} (${c})${dd?" ⏰"+dd:""}</button>`}).join("");
-  $("tabs").querySelectorAll("button").forEach(b=>b.onclick=()=>{tab=b.dataset.t;fsize="";fprod="";fby="";render();});
-  const base=tab==="fu"?S.items.filter(i=>fuDue(i)||touchedToday(i)):S.items.filter(i=>i.folder===tab);
+  $("tabs").querySelectorAll("button").forEach(b=>b.onclick=()=>{tab=b.dataset.t;try{localStorage.setItem("pt-tab",tab);localStorage.setItem("pt-y","0")}catch(e){}fsize="";fprod="";fby="";render();window.scrollTo(0,0);});
+  const base=tab==="fu"?S.items.filter(i=>fuDue(i)||touchedToday(i)):S.items.filter(i=>inF(i,tab));
   const ALL=base;
   const cnt=(z,p)=>ALL.filter(i=>(!z||i.size===z)&&(!p||i.prod===p)).length;
   const PN={water:"Pani",juice:"Juice",csd:"Soda"};
@@ -241,7 +243,7 @@ function render(){
   renderTabs();
   const qq=q.trim().toLowerCase();
   if(tab==="rep"){showReport();return;}
-  let rows=tab==="fu"?S.items.filter(i=>fuDue(i)||fuHeld(i)||touchedToday(i)):S.items.filter(i=>i.folder===tab);
+  let rows=tab==="fu"?S.items.filter(i=>fuDue(i)||fuHeld(i)||touchedToday(i)):S.items.filter(i=>inF(i,tab));
   if(fsize)rows=rows.filter(i=>i.size===fsize);if(fprod)rows=rows.filter(i=>i.prod===fprod);
   if(qq){rows=smartSearch(qq);}
   if(OPEN.includes(tab)&&!qq&&!fsize&&!fprod)rows.sort((a,b)=>fuNext(a)-fuNext(b));else if(DATE_F.includes(tab)&&!qq&&!fsize&&!fprod)rows.sort((a,b)=>(tdDue(b)-tdDue(a))||String(a.talkOn||"9").localeCompare(String(b.talkOn||"9")));
@@ -298,9 +300,9 @@ document.querySelectorAll("[data-qd]").forEach(b=>b.onclick=()=>{const[id,k]=b.d
   document.querySelectorAll("[data-px]").forEach(b=>b.onclick=()=>{if(!confirm("Hamesha ke liye hata doge? Wapas nahi aayega."))return;const gone=byId(b.dataset.px);if(gone){const pn=Date.now();S.purged=S.purged||{};S.gone=S.gone||{};S.gone[gone.id]=pn;if(gone.sid)S.gone[gone.sid]=pn;if(last10(gone.phone))S.purged[last10(gone.phone)]=pn;srvPush([{id:gone.sid||gone.id,phone:gone.phone,purged:true,updated:pn}]);}S.items=S.items.filter(x=>x.id!==b.dataset.px);save();render();toast("Poora delete ho gaya");});
   document.querySelectorAll("[data-mv]").forEach(b=>b.onclick=()=>{const [id,f]=b.dataset.mv.split("|");moveTo(id,f);});
   document.querySelectorAll("[data-td]").forEach(b=>b.onclick=()=>{const x=byId(b.dataset.td);askDate(b.dataset.td,x&&DATE_ASK.includes(x.folder)?x.folder:"tdate");});
-  document.querySelectorAll("[data-fu]").forEach(a=>a.addEventListener("click",()=>{const i=byId(a.dataset.fu);if(!i)return;i.talkOn=DATE_F.includes(i.folder)?dPlus(10):"";i.fuLast=Date.now();i.fuCount=(i.fuCount||0)+1;i.fuBy="owner";(i.notes=i.notes||[]).push({t:new Date().toISOString(),text:"📤 WhatsApp follow-up bheja"});i.updated=Date.now();save();setTimeout(render,800);toast("✅ Follow-up ho gaya · aaj Aaj ke Follow-up mein dikhega, party apne folder mein hi hai");}));
+  document.querySelectorAll("[data-fu]").forEach(a=>a.addEventListener("click",()=>{const i=byId(a.dataset.fu);if(!i)return;i.talkOn=DATE_F.includes(i.folder)?dPlus(10):"";i.fuLast=Date.now();i.fuDay=today();i.fuCount=(i.fuCount||0)+1;i.fuBy="owner";(i.notes=i.notes||[]).push({t:new Date().toISOString(),text:"📤 WhatsApp follow-up bheja"});i.updated=Date.now();save();setTimeout(render,800);toast("✅ Follow-up ho gaya · aaj Aaj ke Follow-up mein dikhega, party apne folder mein hi hai");}));
   document.querySelectorAll("[data-fq]").forEach(b=>b.onclick=()=>{const i=byId(b.dataset.fq);if(!i)return;const q=(i.quotes||[]).slice(-1)[0];if(!q)return;fileBlob(q).then(bl=>{const f=new File([bl],q.name,{type:q.type||"application/pdf"});if(navigator.canShare&&navigator.canShare({files:[f]}))navigator.share({files:[f],text:"Paramount Technology - Quotation"}).catch(()=>{});else toast("Share nahi ho paya");}).catch(()=>toast("PDF nahi mili"));});
-document.querySelectorAll("[data-fs]").forEach(b=>b.onclick=()=>{const i=byId(b.dataset.fs);if(!i)return;i.talkOn=DATE_F.includes(i.folder)?dPlus(10):"";i.fuLast=Date.now();i.updated=Date.now();save();render();toast("10 din baad phir aayega");});
+document.querySelectorAll("[data-fs]").forEach(b=>b.onclick=()=>{const i=byId(b.dataset.fs);if(!i)return;i.talkOn=DATE_F.includes(i.folder)?dPlus(10):"";i.fuLast=Date.now();i.fuDay=today();i.updated=Date.now();save();render();toast("10 din baad phir aayega");});
 }
 function dmy(d){const m=String(d||"").match(/^(\d{4})-(\d{2})-(\d{2})/);return m?m[3]+"-"+m[2]+"-"+m[1]:String(d||"");}
 function askDate(id,tf){tf=tf||"tdate";const i=byId(id);if(!i)return;const TT={tdate:"📅 Kis tareekh ko baat karni hai?",baat:"💬 Baat chal rahi — kis tareekh ko follow-up / baat?",khud:"📝 Khud ki Quotation — kis tareekh ko phone karna hai?",vdone:"✅ Visit aa gayi — agli baat kis tareekh ko?"};const t=new Date(Date.now()+10*DAY),p=n=>String(n).padStart(2,"0");
@@ -1093,5 +1095,6 @@ document.addEventListener("click",async e=>{const id=e.target&&e.target.id;
 });})();
 window.__crm={parseCSV,ingestRows,get S(){return S;},set S(v){S=v;},render};
 </script>
+<script>(function(){var t=0;window.addEventListener("scroll",function(){clearTimeout(t);t=setTimeout(function(){try{localStorage.setItem("pt-y",String(window.scrollY))}catch(e){}},300)});window.addEventListener("load",function(){setTimeout(function(){try{var y=+localStorage.getItem("pt-y")||0;if(y)window.scrollTo(0,y)}catch(e){}},600)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible"){try{var y=+localStorage.getItem("pt-y")||0;var k=localStorage.getItem("pt-tab");if(k&&typeof tab!=="undefined"&&tab!==k){tab=k;render();}if(y)setTimeout(function(){window.scrollTo(0,y)},200)}catch(e){}}})})();</script>
 </body>
 </html>
