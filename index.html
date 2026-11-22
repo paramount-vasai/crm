@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Paramount CRM v79</title>
+<title>Paramount CRM v80</title>
 <style>
 :root{--bg:#f3f5f9;--card:#fff;--ink:#1b2430;--mute:#6b7685;--line:#e2e7ef;--pri:#123b6b;--acc:#1f8a4c;--warn:#c0392b;--chip:#e8eef6}
 *{box-sizing:border-box}
@@ -51,7 +51,7 @@ label{display:block;font-size:12.5px;color:var(--mute);margin:10px 0 3px}
 </head>
 <body>
 <header>
-  <div class="row"><h1>Paramount CRM <span style="font-size:11px;opacity:.7">v79<span id="szTag"></span></span></h1>
+  <div class="row"><h1>Paramount CRM <span style="font-size:11px;opacity:.7">v80<span id="szTag"></span></span></h1>
     <button id="bSync" title="Sheet se naye enquiry lao">⟳ Sync</button>
     <button id="bMenu">☰</button></div>
   <input id="search" type="search" placeholder="Naam / mobile / 120 BPM water se dhundo...">
@@ -203,7 +203,7 @@ function dedupItems(){const by={},drop=new Set();S.items.forEach(i=>{const n=las
   ["calls","notes","payments","chat"].forEach(f=>{if(ol[f]&&ol[f].length)nw[f]=mergeArr(ol[f],nw[f]||[]);});["quotes","recs"].forEach(f=>{if(ol[f]&&ol[f].length){const s=new Set((nw[f]||[]).map(x=>x&&x.id||JSON.stringify(x)));nw[f]=(nw[f]||[]).concat(ol[f].filter(x=>!s.has(x&&x.id||JSON.stringify(x))));}});if(!nw.name&&ol.name)nw.name=ol.name;if(!nw.sid&&ol.sid)nw.sid=ol.sid;if(!nw.final&&ol.final)nw.final=ol.final;
   drop.add(ol);by[n]=nw;});if(drop.size)S.items=S.items.filter(i=>!drop.has(i));return drop.size;}
 function inqStaff(){let c=0;S.items.forEach(l=>{if(l.folder==="inquiry"&&l.ownerF!=="inquiry"&&(lastBy(l)==="staff"||l.qBy==="staff")){l.folder="staff";l._lf="staff";l.isNew=false;(l.notes=l.notes||[]).push({t:new Date().toISOString(),text:"🧑 Staff ne baat ki — Staff ki party mein gayi"});l.updated=Date.now();c++;}});return c;}
-function revFix(){S.items.forEach(l=>{if(l.folder!=="inquiry")return;const rec=(l.notes||[]).some(n=>/^\u267b/.test(n.text||""));const back=(l.ownerF&&l.ownerF!=="inquiry")?l.ownerF:(rec?"deleted":"");if(!back)return;l.folder=back;l._lf=back;l.ownerF=back;l.msgAlert=1;l.isNew=false;(l.notes=l.notes||[]).push({t:new Date().toISOString(),text:"📩 Party ka naya message aaya — apne folder mein hi rakhi (Inquiry mein nahi)."});l.updated=Date.now();});}
+function revFix(){S.items.forEach(l=>{if(l.folder!=="inquiry")return;const rec=(l.notes||[]).some(n=>/^\u267b/.test(n.text||""));let nf="";{const nn=(l.notes||[]).map(n=>n.text||"").reverse().find(t=>/Party abhi\s*'/.test(t));if(nn){const lab=nn.replace(/^.*Party abhi\s*'/,"").toLowerCase();const hit=FOLDERS.find(f=>f[0]!=="inquiry"&&lab.includes(f[1].replace(/^[^A-Za-z]+/,"").toLowerCase().slice(0,12)));if(hit)nf=hit[0];}}if(!nf&&l.qBy==="owner")nf="khud";const back=(l.ownerF&&l.ownerF!=="inquiry")?l.ownerF:(rec?"deleted":nf);if(!back)return;l.folder=back;l._lf=back;l.ownerF=back;l.msgAlert=1;l.isNew=false;(l.notes=l.notes||[]).push({t:new Date().toISOString(),text:"📩 Party ka naya message aaya — apne folder mein hi rakhi (Inquiry mein nahi)."});l.updated=Date.now();});}
 function normItems(){revFix();inqStaff();fuApply();S.items=S.items.filter(i=>last10(i.phone)||i.folder!=="inquiry"||(i.calls&&i.calls.length)||(i.notes&&i.notes.length)||(i.quotes&&i.quotes.length));dedupItems();const ok=FOLDERS.map(f=>f[0]);S.items.forEach(i=>{if(i.folder==="important")i.folder="jaldi";if(i.folder==="fu10")i.folder=(i.notes||[]).some(n=>/Quotation/i.test(n.text||""))?"quote":(i.fuFrom||"baat");{const nf=mapOld(i);if(nf!==i.folder){i.folder=nf;i.updated=Date.now();}}if(i.folder==="vdone"&&!i.visitOn&&!i.vMig){i.vMig=1;i.visitOn=i.talkOn||"";i.talkOn="";}if(!ok.includes(i.folder))i.folder="inquiry";i.calls=i.calls||[];i.notes=i.notes||[];i.payments=i.payments||[];if(!i.qBy&&qCount(i)){const lq=(i.notes||[]).filter(n=>/Quotation/i.test(n.text||"")).slice(-1)[0];i.qBy=/\(Staff\)\s*$|staff/i.test(lq.text||"")?"staff":"owner";}if((i.fuCount||0)>0&&!i.fuBy)i.fuBy=i.notes.some(n=>/^📤 WhatsApp follow-up bheja/.test(n.text||""))?"owner":"staff";i.created=i.created||new Date().toISOString();retroTag(i);if(["s","m","l","xl"].includes(i.size)){const old=i.size;i.size="";if(!i.sizeManual)autoTag(i);if(!i.size)i.size={s:"30",m:"60",l:"120",xl:"150"}[old];}autoTag(i);});}
 function load(){try{const r=localStorage.getItem(KEY);if(r)S=Object.assign(S,JSON.parse(r));}catch(e){}normItems();}
 function save(){try{if(!window.__pulling)S.items.forEach(i=>{if(i.folder==="nophone2"&&i._lf!=="nophone2"&&!(i.np2Since>(i.updated||0)-60000))i.np2Since=Date.now();if(i._lf!==i.folder){i.fuDay="";i.fmAt=Date.now();if(i._lf!==undefined)i.ownerF=i.folder;else if(!i.ownerF&&LOCKABLE.includes(i.folder))i.ownerF=i.folder;i._lf=i.folder;}});if(S.purged)S.items.forEach(i=>{const k=last10(i.phone);if(k&&S.purged[k]&&(i.updated||0)>S.purged[k])delete S.purged[k];});S.savedAt=Date.now();putIDB();if(!putS()){if(!putLite()){storeAlarm();return false;}}setTimeout(srvPushDirty,1500);return true;}catch(e){storeAlarm();return false;}}
