@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Paramount CRM v88</title>
+<title>Paramount CRM v90</title>
 <style>
 :root{--bg:#f3f5f9;--card:#fff;--ink:#1b2430;--mute:#6b7685;--line:#e2e7ef;--pri:#123b6b;--acc:#1f8a4c;--warn:#c0392b;--chip:#e8eef6}
 *{box-sizing:border-box}
@@ -51,7 +51,7 @@ label{display:block;font-size:12.5px;color:var(--mute);margin:10px 0 3px}
 </head>
 <body>
 <header>
-  <div class="row"><h1>Paramount CRM <span style="font-size:11px;opacity:.7">v88<span id="szTag"></span></span></h1>
+  <div class="row"><h1>Paramount CRM <span style="font-size:11px;opacity:.7">v90<span id="szTag"></span></span></h1>
     <button id="bSync" title="Sheet se naye enquiry lao">⟳ Sync</button>
     <button id="bMenu">☰</button></div>
   <input id="search" type="search" placeholder="Naam / mobile / 120 BPM water se dhundo...">
@@ -168,7 +168,7 @@ function okAaj(i){return i.folder!=="deleted"&&!NOFU.includes(i.folder);}
 function aajCut(i){return Math.max(Number(i.fmAt)||0,Number(i.aajClr)||0);}
 function recFu(i){const t=lastFuT(i);return okAaj(i)&&Date.now()-t<H12&&t>aajCut(i);}
 function recPh(i){const t=lastCallT(i);return okAaj(i)&&Date.now()-t<H12&&t>aajCut(i);}
-function aajList(t){return S.items.filter(t==="ph"?recPh:recFu);}
+window.__aajKeep={};function aajList(t){const K=window.__aajKeep;return S.items.filter(i=>(t==="ph"?recPh(i):recFu(i))||(K[i.id]&&K[i.id].t===t&&okAaj(i)&&(Number(i.fmAt)||0)<K[i.id].at));}
 function rankOf(i){if(touchedToday(i))return 3;if(dueNow(i)||tdDue(i))return 0;if(i.msgAlert)return 1;return 2;}
 function fuApply(){const L=fuLog();S.items.forEach(i=>{const t=L[last10(i.phone)||i.id];if(t&&(Number(i.fuLast)||0)<t){i.fuLast=t;i.fuCount=(i.fuCount||0)+1;i.fuBy="owner";i.fuDay=today();}if(t&&DATE_F.includes(i.folder)&&i.talkOn&&i.talkOn<=today())i.talkOn=dPlus(10);});}
 function lastTouch(i){const lc=(i.calls||[]).slice(-1)[0],L=window.__fl||{};return Math.max(Number(i.fuLast)||0,lc?new Date(lc.t).getTime()||0:0,Number(L[last10(i.phone)||i.id])||0);}
@@ -401,7 +401,7 @@ function waNum(p){let d=String(p||"").replace(/\D/g,"");if(d.length===10)d="91"+
 function byId(id){return S.items.find(i=>i.id===id);}
 window.__keep=new Set();
 setInterval(()=>{if(tab==="fu"&&!document.querySelector(".modal.on")){const y=window.scrollY;render();window.scrollTo(0,y);}},20000);
-function logCall(id){const i=byId(id);if(!i)return;if(tab==="fu")window.__keep.add(id);try{localStorage.setItem("pt-pending-rec",JSON.stringify({id:id,t:Date.now()}));}catch(e){}(i.calls=i.calls||[]).push({t:new Date().toISOString(),note:"",by:"Aap"});i.isNew=false;i.msgAlert=0;if(tab==="fu")i.aajClr=Date.now()+2000;
+function logCall(id){const i=byId(id);if(!i)return;if(tab==="fu")window.__keep.add(id);try{localStorage.setItem("pt-pending-rec",JSON.stringify({id:id,t:Date.now()}));}catch(e){}(i.calls=i.calls||[]).push({t:new Date().toISOString(),note:"",by:"Aap"});i.isNew=false;i.msgAlert=0;if(tab==="fu"){i.aajClr=Date.now()+2000;window.__aajKeep[i.id]={t:"fu",at:Date.now()};}if(i.talkOn&&i.talkOn<=today())i.talkOn=dPlus(10);
   if(tab==="fu"&&FU_F.includes(i.folder))i.fuHold=Math.max(i.fuHold||0,Date.now()+HOLD);
   S.pendCall={id:id,t:Date.now()};i.updated=Date.now();save();setTimeout(render,300);}
 /* ---------- 📞 Call ke baad: ek hi screen (note, folder, tareekh, quotation) — sab apne-aap save ---------- */
@@ -1082,7 +1082,7 @@ function doImport(file){
 /* ---------- wiring ---------- */
 $("search").oninput=e=>{q=e.target.value;render();};
 $("bAdd").onclick=()=>openDetail(null,true);
-$("bSync").onclick=()=>sync(true);
+$("bSync").onclick=()=>{window.__aajKeep={};sync(true);render();};
 $("bMenu").onclick=()=>{$("waApp").value=S.waApp||"biz";$("srvUrl").value=S.srvUrl||"";$("srvPin").value=S.srvPin||"";$("srvInfo").textContent=srvOk()?"Juda hua ✅":"Abhi juda nahi";$("sheetUrl").value=S.sheetUrl||"";$("vidLinks").value=S.videos||"";$("lockBox").innerHTML=FOLDERS.filter(f=>LOCKABLE.includes(f[0])).map(([k,n])=>`<label style="margin:0;color:var(--ink);font-size:14px"><input type="checkbox" style="width:auto" value="${k}" ${lockF().includes(k)?"checked":""}> ${n}</label>`).join("");$("syncInfo").textContent=S.lastSync?"Aakhri sync: "+fmt(S.lastSync):"";$("mMenu").classList.add("on");};
 $("bCloseMenu").onclick=()=>$("mMenu").classList.remove("on");
 const normUrl=v=>{v=v.trim();return /^[A-Za-z0-9_-]{25,}$/.test(v)?"https://docs.google.com/spreadsheets/d/"+v+"/edit":v;};
