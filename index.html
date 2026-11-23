@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Paramount CRM v83</title>
+<title>Paramount CRM v84</title>
 <style>
 :root{--bg:#f3f5f9;--card:#fff;--ink:#1b2430;--mute:#6b7685;--line:#e2e7ef;--pri:#123b6b;--acc:#1f8a4c;--warn:#c0392b;--chip:#e8eef6}
 *{box-sizing:border-box}
@@ -51,7 +51,7 @@ label{display:block;font-size:12.5px;color:var(--mute);margin:10px 0 3px}
 </head>
 <body>
 <header>
-  <div class="row"><h1>Paramount CRM <span style="font-size:11px;opacity:.7">v83<span id="szTag"></span></span></h1>
+  <div class="row"><h1>Paramount CRM <span style="font-size:11px;opacity:.7">v84<span id="szTag"></span></span></h1>
     <button id="bSync" title="Sheet se naye enquiry lao">⟳ Sync</button>
     <button id="bMenu">☰</button></div>
   <input id="search" type="search" placeholder="Naam / mobile / 120 BPM water se dhundo...">
@@ -237,7 +237,7 @@ function renderTabs(){
     CH.map(([z,p])=>`<button class="tab ${fsize===z&&fprod===p?"on":""}" data-s="${z}" data-p="${p}">${z} BPM ${PN[p]} (${cnt(z,p)})</button>`).join("");
   $("tabs2").querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{fsize=b.dataset.s;fprod=b.dataset.p||"";fby="";render();});$("tabs2").querySelectorAll("[data-by]").forEach(b=>b.onclick=()=>{fby=b.dataset.by;fsize="";fprod="";render();});
 }
-const _rndSp=render;render=function(){_rndSp();if(q.trim()&&tab!=="rep"){const n=$("list").querySelectorAll(".card[data-id], .card").length;const h=document.createElement("div");h.className="meta";h.style.cssText="padding:4px 2px;font-weight:700;color:#123b6b";h.textContent="🔍 "+smartSearch(q.trim().toLowerCase()).length+" parties mili (saare folders mein se)";$("list").prepend(h);}if(tab!=="spare"||q.trim())return;const d=document.createElement("div");d.className="card";d.style.background="#fff4e6";d.innerHTML='<div class="nm">🔧 Santosh Engineering — Spare parts</div><div style="font-size:13px;margin:4px 0 8px">Parts list (photo + rate), machines aur orders yahan se sambhalo. Party ke naye order is folder mein aate hain.</div><button id="spOpen" style="background:#7a2e0e;color:#fff;border:0;border-radius:8px;padding:10px 14px;font:inherit">🔩 Parts / Machines / Orders kholo</button>';$("list").prepend(d);$("spOpen").onclick=()=>{if(!S.srvUrl){toast("Pehle ☰ mein Sync (server link) set karo");return}window.open(S.srvUrl+"?page=spareadmin","_blank")}};
+const _rndSp=render;render=function(){_rndSp();if(q.trim()&&tab!=="rep"){const n=$("list").querySelectorAll(".card[data-id], .card").length;const h=document.createElement("div");h.className="meta";h.style.cssText="padding:4px 2px;font-weight:700;color:#123b6b";h.textContent="🔍 "+$("list").querySelectorAll(".card[data-id]").length+" parties mili (sirf is folder mein)";$("list").prepend(h);}if(tab!=="spare"||q.trim())return;const d=document.createElement("div");d.className="card";d.style.background="#fff4e6";d.innerHTML='<div class="nm">🔧 Santosh Engineering — Spare parts</div><div style="font-size:13px;margin:4px 0 8px">Parts list (photo + rate), machines aur orders yahan se sambhalo. Party ke naye order is folder mein aate hain.</div><button id="spOpen" style="background:#7a2e0e;color:#fff;border:0;border-radius:8px;padding:10px 14px;font:inherit">🔩 Parts / Machines / Orders kholo</button>';$("list").prepend(d);$("spOpen").onclick=()=>{if(!S.srvUrl){toast("Pehle ☰ mein Sync (server link) set karo");return}window.open(S.srvUrl+"?page=spareadmin","_blank")}};
 function fixCalled(){return false;}
 /* 🔍 Search: naam / mobile / note, ya "120 BPM water" jaisa likho to us size + product ki saari parties */
 const PW={water:/water|pani|paani|mineral|bisleri/,csd:/soda|csd|carbonat|cold ?drink|soft ?drink/,juice:/juice|jus|pulpy|mango/};
@@ -259,7 +259,7 @@ function render(){
   if(tab==="rep"){showReport();return;}
   let rows=tab==="fu"?S.items.filter(i=>fuDue(i)||fuHeld(i)||touchedToday(i)):S.items.filter(i=>inF(i,tab));
   if(fsize)rows=rows.filter(i=>i.size===fsize);if(fprod)rows=rows.filter(i=>i.prod===fprod);
-  if(qq){rows=smartSearch(qq);}
+  if(qq){const ids=new Set(rows.map(x=>x.id));rows=smartSearch(qq).filter(x=>ids.has(x.id));}
   if(OPEN.includes(tab)&&!qq&&!fsize&&!fprod)rows.sort((a,b)=>fuNext(a)-fuNext(b));else if(DATE_F.includes(tab)&&!qq&&!fsize&&!fprod)rows.sort((a,b)=>(tdDue(b)-tdDue(a))||String(a.talkOn||"9").localeCompare(String(b.talkOn||"9")));
   else if((tab==="fud"||tab==="fus")&&!qq)rows.sort((a,b)=>(b.fuLast||0)-(a.fuLast||0));else if(tab==="fu"&&!qq)rows.sort((a,b)=>((b.msgAlert?1:0)-(a.msgAlert?1:0))||((touchedToday(b)?lastTouch(b):0)-(touchedToday(a)?lastTouch(a):0))||(fuNext(a)-fuNext(b)));else rows.sort((a,b)=>(b.updated||0)-(a.updated||0));
   if(tab!=="fu"&&tab!=="inquiry"&&tab!=="deleted"&&!qq){const nx=i=>(DATE_F.includes(i.folder)&&i.talkOn)?(new Date(i.talkOn+"T00:00:00").getTime()||fuNext(i)):fuNext(i),rk=rankOf;rows.sort((a,b)=>(rk(a)-rk(b))||(rk(a)===2?nx(a)-nx(b):0));}
