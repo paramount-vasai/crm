@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Paramount CRM v92</title>
+<title>Paramount CRM v93</title>
 <style>
 :root{--bg:#f3f5f9;--card:#fff;--ink:#1b2430;--mute:#6b7685;--line:#e2e7ef;--pri:#123b6b;--acc:#1f8a4c;--warn:#c0392b;--chip:#e8eef6}
 *{box-sizing:border-box}
@@ -51,7 +51,7 @@ label{display:block;font-size:12.5px;color:var(--mute);margin:10px 0 3px}
 </head>
 <body>
 <header>
-  <div class="row"><h1>Paramount CRM <span style="font-size:11px;opacity:.7">v92<span id="szTag"></span></span></h1>
+  <div class="row"><h1>Paramount CRM <span style="font-size:11px;opacity:.7">v93<span id="szTag"></span></span></h1>
     <button id="bSync" title="Sheet se naye enquiry lao">⟳ Sync</button>
     <button id="bMenu">☰</button></div>
   <input id="search" type="search" placeholder="Naam / mobile / 120 BPM water se dhundo...">
@@ -138,6 +138,8 @@ function lastBy(i){const lc=(i.calls||[]).slice(-1)[0];return lc?(isStaffBy(lc.b
 let tab=(()=>{try{return localStorage.getItem("pt-tab")||"inquiry"}catch(e){return "inquiry"}})(),q="",fsize="",fprod="";
 function fuToday(i){return i.fuDay===today();}
 function inF(i,k){return i.folder===k;}
+function budTxt(b){b=Number(b)||0;if(b>=10000000)return (Math.round(b/1e6)/10)+" करोड़";return (Math.round(b/1e4)/10)+" लाख";}
+function budLine(i){if(!i.budAsk&&!i.bud)return "";return `<div class="msg" style="color:#c00;font-weight:700">${i.bud?"इनका बजट "+budTxt(i.bud)+" है":"बजट नहीं बताया"}${i.need?"<br>चाहिए: "+esc(i.need):""}</div>`;}
 /* ---------- Plant size + product (folder se alag, sirf chhantne ke liye) ---------- */
 const SIZES=[["20","20 BPM"],["30","30 BPM"],["40","40 BPM"],["60","60 BPM"],["90","90 BPM"],["120","120 BPM"],["150","150 BPM"],["200","200 BPM"]];
 let chartOpen=false;
@@ -281,7 +283,7 @@ function render(){
         ${qq?`<span class="badge">${esc(FOLDERS.find(f=>f[0]===i.folder)[1])}</span>`:""}
         ${(fsize||fprod||qq||tab==="fu"||tab==="ph")?`<span class="badge">📁 ${esc((FOLDERS.find(f=>f[0]===i.folder)||["",i.folder])[1])}</span>`:""}${i.folder==="vdone"&&i.visitOn?`<span class="badge" style="background:#1f8a4c;color:#fff">✅ Visit aayi: ${esc(dmy(i.visitOn))}</span>`:""}${DATE_F.includes(i.folder)&&!i.talkOn?`<span class="badge">📅 Tareekh daalo</span>`:""}${DATE_F.includes(i.folder)&&i.talkOn?`<span class="badge ${tdDue(i)?"":"fu"}" style="${tdDue(i)?"background:#c0392b;color:#fff":""}">${tdDue(i)?"⏰ AAJ BAAT KARO":"📅 "+esc(dmy(i.talkOn))+" ko phone"}</span>`:""}${i.visitAt?`<span class="badge">🏭 Visit: ${esc(fmt(new Date(i.visitAt).toISOString())).slice(0,10)}</span>`:""}${i.folder==="kal"?`<span class="badge fu">${new Date(i.kalSince||i.updated||0).toDateString()===new Date().toDateString()?"📅 Kal call karna":"📞 Aaj call karo"}</span>`:""}${(OPEN.includes(i.folder)||i.folder==="busyme")?`<span class="badge fu" style="${dueNow(i)?"background:#c0392b;color:#fff":""}">${dueNow(i)?"⏰ Aaj phone karo":"📅 Follow-up: "+esc(fmt(fuNext(i)).slice(0,10))}${i.folder==="baat"&&i.talkOn?" (aapki tareekh)":""}</span>`:""}</div>
       <div class="ph">${esc(i.phone||"")}</div>${i.kqReq?`<div class="msg" style="background:#fff3cd;border:1px solid #e0b100;border-radius:8px;padding:6px;color:#5a3d00"><b>📝 Quotation chahiye:</b> ${esc(i.kqReq)} <small>(${esc(i.kqReqBy||"")})</small></div>`:""}${(i.sfiles||[]).length?`<div class="btns">${i.sfiles.slice(-4).map(f=>`<a target="_blank" rel="noopener" href="${esc(f.url)}" style="background:#ffe082;color:#5a3d00">📎 ${esc(String(f.name).slice(0,26))}</a>`).join("")}</div>`:""}
-      ${DATE_ASK.includes(i.folder)&&i.talkNote?`<div class="msg" style="color:#7a2e0e"><b>📝 ${esc(i.talkNote)}</b></div>`:""}${DATE_ASK.includes(i.folder)?`<div class="btns" style="margin-top:2px"><button data-td="${i.id}">📅 Tareekh badlo</button></div>`:""}${i.message?`<div class="msg">${esc(i.message.slice(0,140))}${i.message.length>140?"…":""}</div>`:""}
+      ${DATE_ASK.includes(i.folder)&&i.talkNote?`<div class="msg" style="color:#7a2e0e"><b>📝 ${esc(i.talkNote)}</b></div>`:""}${budLine(i)}${DATE_ASK.includes(i.folder)?`<div class="btns" style="margin-top:2px"><button data-td="${i.id}">📅 Tareekh badlo</button></div>`:""}${i.message?`<div class="msg">${esc(i.message.slice(0,140))}${i.message.length>140?"…":""}</div>`:""}
       <div class="meta">${i.source?esc(i.source)+" · ":""}Aaya: ${esc(fmt(i.created))}</div>
       ${(i.recs||[]).length||(i.quotes||[]).length?`<div class="meta">${(i.recs||[]).length?"🎙 "+i.recs.length+" recording":""}${(i.recs||[]).length&&(i.quotes||[]).length?" · ":""}${(i.quotes||[]).length?"📄 "+i.quotes.length+" quotation":""}</div>`:""}${i.lastQuote?`<div class="meta">📄 Aakhri quotation: <b>${esc(i.lastQuote)}</b></div>`:""}
       ${(i.quotes||[]).length?`<div style="margin:6px 0">${i.quotes.map((q,k)=>`<div style="display:flex;align-items:center;gap:6px;background:#e3f5e9;border:1px solid #1f8a4c;border-radius:8px;padding:6px 8px;margin:4px 0"><div style="flex:1;min-width:0;font-size:13px;color:#14532d"><b>📄 ${esc(q.title||String(q.name).replace(/\.pdf$/i,"").replace(/_/g," "))}</b>${q.total?` · <b>${esc(inr(q.total))}</b>`:""}<br><small>${esc(q.date||"")}</small></div><button data-qd="${i.id}|${k}" style="padding:5px 8px;font-size:12px">⬇ Dekho</button><button data-qs="${i.id}|${k}" style="padding:5px 8px;font-size:12px">📤</button><button data-qx="${i.id}|${k}" style="padding:5px 9px;font-size:13px;background:#c0392b;color:#fff">✕</button></div>`).join("")}</div>`:""}
@@ -1040,7 +1042,7 @@ async function srvPull(manual){if(!srvOk())return;if(!window.__idbReady){setTime
     if(s.purged){const pk=last10(s.phone),pt=Number(s.purgedAt||s.updated)||0;S.purged=S.purged||{};if(pk)S.purged[pk]=Math.max(S.purged[pk]||0,pt);const b4=S.items.length;S.items=S.items.filter(x=>!((x.sid===s.id||x.id===s.id||(pk&&last10(x.phone)===pk))&&(x.updated||0)<=pt));if(S.items.length<b4)n++;return;}
     let l=S.items.find(x=>x.id===s.id||x.sid===s.id)||(last10(s.phone)?S.items.find(x=>last10(x.phone)===last10(s.phone)):null);
     if(!l){l=Object.assign({},s,{sid:s.id,id:uid(),calls:s.calls||[],notes:s.notes||[],payments:s.payments||[]});S.items.push(l);n++;return;}
-    const oQ=qCount(l),oF0=l.folder;l.sid=s.id;l.calls=mergeArr(l.calls,s.calls);l.notes=mergeArr(l.notes,s.notes);if(qCount(l)>oQ&&l.qBy!=="owner")l.qBy="staff";const oLock=isLocked(l);
+    const oQ=qCount(l),oF0=l.folder;l.sid=s.id;if(s.budAsk)l.budAsk=s.budAsk;if(s.bud)l.bud=s.bud;if(s.need)l.need=s.need;l.calls=mergeArr(l.calls,s.calls);l.notes=mergeArr(l.notes,s.notes);if(qCount(l)>oQ&&l.qBy!=="owner")l.qBy="staff";const oLock=isLocked(l);
     if((s.updated||0)>(l.updated||0)){const oF=l.folder,oFu=Number(l.fuLast)||0,oFc=Number(l.fuCount)||0,oFm=Number(l.fmAt)||0,oAc=Number(l.aajClr)||0,oFd=l.fuDay||"";["folder","name","fuLast","fuCount","baatSince","size","prod","qprods","sizeManual","visitAt","remind","isNew","msgAlert","lastQuote","talkOn","talkNote","visitOn","delFrom","qBy","kqReq","kqReqBy","kqNew","sfiles","np2Since","fmAt","aajClr"].forEach(k=>{if(s[k]!==undefined)l[k]=s[k];});if(!l.phone&&s.phone)l.phone=s.phone;l.updated=s.updated;n++;
       if((Number(s.fuLast)||0)>oFu)l.fuBy="staff";l.fuLast=Math.max(oFu,Number(l.fuLast)||0);l.fuCount=Math.max(oFc,Number(l.fuCount)||0);l.fmAt=Math.max(oFm,Number(l.fmAt)||0);l.aajClr=Math.max(oAc,Number(l.aajClr)||0);if(oFd>(l.fuDay||""))l.fuDay=oFd;
       l.folder=mapOld(l);const okRoute=l.folder===oF||oF==="deleted"||(ROUTES[oF]||[]).includes(l.folder);if(l.folder==="deleted"&&oF!=="deleted")l.delFrom=oF;
