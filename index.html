@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Paramount CRM v97</title>
+<title>Paramount CRM v98</title>
 <style>
 :root{--bg:#f3f5f9;--card:#fff;--ink:#1b2430;--mute:#6b7685;--line:#e2e7ef;--pri:#123b6b;--acc:#1f8a4c;--warn:#c0392b;--chip:#e8eef6}
 *{box-sizing:border-box}
@@ -51,7 +51,7 @@ label{display:block;font-size:12.5px;color:var(--mute);margin:10px 0 3px}
 </head>
 <body>
 <header>
-  <div class="row"><h1>Paramount CRM <span style="font-size:11px;opacity:.7">v97<span id="szTag"></span></span></h1>
+  <div class="row"><h1>Paramount CRM <span style="font-size:11px;opacity:.7">v98<span id="szTag"></span></span></h1>
     <button id="bSync" title="Sheet se naye enquiry lao">⟳ Sync</button>
     <button id="bMenu">☰</button></div>
   <input id="search" type="search" placeholder="Naam / mobile / 120 BPM water se dhundo...">
@@ -65,7 +65,7 @@ label{display:block;font-size:12.5px;color:var(--mute);margin:10px 0 3px}
 <div class="modal" id="mQuote"><div class="sheet" id="qSheet"></div></div>
 <div class="modal" id="mDetail"><div class="sheet" id="detail"></div></div>
 
-<div class="modal" id="mTd"><div class="sheet" id="tdSheet"></div></div> <div class="modal" id="mDoc"><div class="sheet" id="docSheet"></div></div>
+<div class="modal" id="mTd"><div class="sheet" id="tdSheet"></div></div> <div class="modal" id="mView" style="z-index:60"><div class="sheet" id="viewSheet" style="max-height:96vh;overflow:auto"></div></div> <div class="modal" id="mDoc"><div class="sheet" id="docSheet"></div></div>
 <div class="modal" id="mMenu"><div class="sheet">
   <h2>Settings</h2>
   <label>Google Sheet CSV link (naye enquiry apne aap lane ke liye)</label>
@@ -139,9 +139,9 @@ let tab=(()=>{try{return localStorage.getItem("pt-tab")||"inquiry"}catch(e){retu
 function fuToday(i){return i.fuDay===today();}
 function inF(i,k){return i.folder===k;}
 const DOC_F=["subsidy","confirm","dispatch"];
-const DOC_SETS={subsidy:["⚖️ Legal paper","🪪 Aadhaar - PAN (KYC)","🏛 Subsidy form - Online","🏦 Bank - Loan paper","📐 Project report - Quotation","📁 Dusre paper"],
- confirm:["🧾 Bill - Invoice","🚛 Challan - E-way bill","📜 PO - Agreement","💰 Payment proof","🔧 Spare parts bheje","📁 Dusre paper"],
- dispatch:["🧾 Bill - Invoice","🚛 Challan - E-way bill","📦 LR - Transport","💰 Payment proof","🔧 Spare parts bheje","📁 Dusre paper"]};
+const DOC_SETS={subsidy:["📄 Quotation","⚖️ Legal paper","🪪 Aadhaar - PAN (KYC)","🏛 Subsidy form - Online","🏦 Bank - Loan paper","📐 Project report - Quotation","📁 Dusre paper"],
+ confirm:["📄 Quotation","⚖️ Legal paper","🧾 Bill - Invoice","🚛 Challan - E-way bill","📜 PO - Agreement","💰 Payment proof","🔧 Spare parts bheje","📁 Dusre paper"],
+ dispatch:["📄 Quotation","⚖️ Legal paper","🧾 Bill - Invoice","🚛 Challan - E-way bill","📦 LR - Transport","💰 Payment proof","🔧 Spare parts bheje","📁 Dusre paper"]};
 function docList(i){const del=new Set(i.sdel||[]);return (i.sdocs||[]).filter(f=>!del.has(f.url));}
 function openDocs(id){const i=byId(id);if(!i)return;const d=docList(i);const DOC_CATS=(DOC_SETS[i.folder]||DOC_SETS.confirm).slice();d.forEach(f=>{if(f.cat&&!DOC_CATS.includes(f.cat))DOC_CATS.splice(DOC_CATS.length-1,0,f.cat);});
   $("docSheet").innerHTML=`<h2>📂 ${esc(i.name||"(naam nahi)")}</h2><div class="meta">${esc(i.phone||"")}${i.sdir?` · <a target="_blank" rel="noopener" href="${esc(i.sdir)}">Drive mein sab dekho</a>`:""}</div>`+
@@ -488,6 +488,14 @@ function fdb(){return _db||(_db=new Promise((ok,no)=>{const r=indexedDB.open("pt
 function fput(id,blob){return fdb().then(d=>new Promise((ok,no)=>{const t=d.transaction("f","readwrite");t.objectStore("f").put(blob,id);t.oncomplete=ok;t.onerror=()=>no(t.error);}));}
 function fget(id){return fdb().then(d=>new Promise((ok,no)=>{const r=d.transaction("f").objectStore("f").get(id);r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error);}));}
 function fdel(id){return fdb().then(d=>new Promise(ok=>{const t=d.transaction("f","readwrite");t.objectStore("f").delete(id);t.oncomplete=ok;t.onerror=ok;}));}
+const PDFJS="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/";
+function loadPdfJs(){if(window.pdfjsLib)return Promise.resolve(window.pdfjsLib);return new Promise((ok,no)=>{const s=document.createElement("script");s.src=PDFJS+"pdf.min.js";s.onload=()=>{try{window.pdfjsLib.GlobalWorkerOptions.workerSrc=PDFJS+"pdf.worker.min.js";ok(window.pdfjsLib);}catch(e){no(e);}};s.onerror=()=>no(new Error("net"));document.head.appendChild(s);});}
+async function viewFile(f){const sh=$("viewSheet");sh.innerHTML=`<div class="btns" style="position:sticky;top:0;background:#fff;z-index:2;padding:4px 0"><button id="vX">✕ Band karo</button><b style="align-self:center;font-size:13px">${esc(f.name||"")}</b></div><div id="vBody" class="meta">⏳ Khul raha hai...</div>`;$("mView").classList.add("on");$("vX").onclick=()=>{$("mView").classList.remove("on");sh.innerHTML="";};
+  const body=$("vBody"),t=(f.type||"")+" "+(f.name||"");
+  try{if(/image\//.test(f.type||"")||/\.(jpe?g|png|webp|gif)$/i.test(f.name||"")){body.innerHTML="";const im=new Image();im.src=URL.createObjectURL(f);im.style.width="100%";body.appendChild(im);return;}
+    if(/pdf/i.test(t)){const lib=await loadPdfJs();const doc=await lib.getDocument({data:new Uint8Array(await f.arrayBuffer())}).promise;body.innerHTML="";const W=Math.min(sh.clientWidth||360,900);
+      for(let n=1;n<=doc.numPages;n++){const pg=await doc.getPage(n);const v0=pg.getViewport({scale:1});const sc=(W/v0.width)*(window.devicePixelRatio||1);const vp=pg.getViewport({scale:sc});const c=document.createElement("canvas");c.width=vp.width;c.height=vp.height;c.style.width="100%";c.style.border="1px solid #ddd";c.style.marginBottom="6px";body.appendChild(c);await pg.render({canvasContext:c.getContext("2d"),viewport:vp}).promise;}return;}
+    body.textContent="Ye file yahan nahi khul sakti, Download karke kholiye.";}catch(e){body.textContent="❌ Nahi khul paya (net check karo). Download karke dekh sakte ho.";}}
 function fileBlob(q){return q.fid?fget(q.fid):fetch(q.data).then(r=>r.blob());}
 function setupFiles(i,kind,boxId,inpId,btnId,label,commit){
   const box=$(boxId);if(!box)return;
@@ -495,9 +503,10 @@ function setupFiles(i,kind,boxId,inpId,btnId,label,commit){
   const draw=()=>{const L=i[kind]||[];
     box.className="";box.innerHTML=L.map((q,k)=>`<div class="log"><b>${esc(q.name)}</b> <small>${esc(q.date)} · ${q.size>1048576?(q.size/1048576).toFixed(1)+" MB":Math.round(q.size/1024)+" KB"}</small>
       ${isRec?`<audio controls preload="none" style="width:100%;margin-top:6px" data-au="${k}"></audio>`:""}
-      <div class="btns"><button data-fd="${k}">⬇ Download</button><button data-fs="${k}">📤 Bhejo</button><button data-fx="${k}" style="padding:2px 8px">✕</button></div></div>`).join("")||`<div class="meta">Abhi koi ${label.toLowerCase()} nahi jodi.</div>`;
+      <div class="btns"><button class="p" data-fv="${k}">👁 Dekho</button><button data-fd="${k}">⬇ Download</button><button data-fs="${k}">📤 Bhejo</button><button data-fx="${k}" style="padding:2px 8px">✕</button></div></div>`).join("")||`<div class="meta">Abhi koi ${label.toLowerCase()} nahi jodi.</div>`;
     box.querySelectorAll("[data-au]").forEach(a=>{const q=L[a.dataset.au];fileBlob(q).then(b=>{if(b)a.src=URL.createObjectURL(b);});});
     const fileOf=k=>{const q=L[k];return fileBlob(q).then(b=>new File([b],q.name,{type:q.type}));};
+    box.querySelectorAll("[data-fv]").forEach(b=>b.onclick=()=>fileOf(b.dataset.fv).then(f=>viewFile(f)));
     box.querySelectorAll("[data-fd]").forEach(b=>b.onclick=()=>fileOf(b.dataset.fd).then(f=>{const u=URL.createObjectURL(f),a=document.createElement("a");a.href=u;a.download=f.name;document.body.appendChild(a);a.click();a.remove();toast("Download ho raha hai");}));
     box.querySelectorAll("[data-fs]").forEach(b=>b.onclick=()=>fileOf(b.dataset.fs).then(f=>{if(navigator.canShare&&navigator.canShare({files:[f]}))navigator.share({files:[f],text:"Paramount Technology"}).catch(()=>{});else toast("Share nahi ho paya, Download karke bhejo");}));
     box.querySelectorAll("[data-fx]").forEach(b=>b.onclick=()=>{if(!confirm("Ye hataoge?"))return;commit();const q=L.splice(Number(b.dataset.fx),1)[0];if(q.fid)fdel(q.fid);i.updated=Date.now();save();draw();});
