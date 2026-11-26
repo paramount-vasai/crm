@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Paramount CRM v98</title>
+<title>Paramount CRM v99</title>
 <style>
 :root{--bg:#f3f5f9;--card:#fff;--ink:#1b2430;--mute:#6b7685;--line:#e2e7ef;--pri:#123b6b;--acc:#1f8a4c;--warn:#c0392b;--chip:#e8eef6}
 *{box-sizing:border-box}
@@ -51,7 +51,7 @@ label{display:block;font-size:12.5px;color:var(--mute);margin:10px 0 3px}
 </head>
 <body>
 <header>
-  <div class="row"><h1>Paramount CRM <span style="font-size:11px;opacity:.7">v98<span id="szTag"></span></span></h1>
+  <div class="row"><h1>Paramount CRM <span style="font-size:11px;opacity:.7">v99<span id="szTag"></span></span></h1>
     <button id="bSync" title="Sheet se naye enquiry lao">⟳ Sync</button>
     <button id="bMenu">☰</button></div>
   <input id="search" type="search" placeholder="Naam / mobile / 120 BPM water se dhundo...">
@@ -121,8 +121,8 @@ const KEY="pt-crm-fresh-v3";
 const FOLDERS=[["inquiry","📥 Inquiry"],["imp","⭐ Important"],["staff","🧑 Staff ki party"],["busy","📞 Busy tha (staff)"],["busyme","💎 Genuine"],["subsidy","🏛 Subsidy wali party"],["nophone","📵 Phone nahi utha"],["nophone2","📵📵 Dobara phone nahi utha"],["baat","💬 Baat chal rahi"],["baatnp","💬📵 Baat chal rahi — phone nahi utha"],["khud","📝 Khud ki Quotation"],["vdone","✅ Visit aa gayi"],["confirm","🎉 Order Confirm"],["dispatch","🚚 Machine Dispatch"],["spare","🔧 Spare parts"],["deleted","🗑 Deleted"]];
 /* har folder se kahan ja sakta hai */
 const OPEN=["staff","busy","nophone","nophone2","baat","baatnp"],MINE=["khud","vdone","confirm"];
-const ROUTES=(()=>{const R={inquiry:OPEN.concat(MINE,["deleted"])};OPEN.forEach(f=>R[f]=OPEN.filter(x=>x!==f).concat(MINE,["deleted"]));R.khud=OPEN.concat(["vdone","confirm","deleted"]);R.vdone=OPEN.concat(["khud","confirm","deleted"]);R.confirm=OPEN.concat(["khud","vdone","deleted"]);R.spare=["deleted"];R.imp=OPEN.concat(MINE,["deleted"]);R.busyme=OPEN.concat(MINE,["deleted"]);R.subsidy=OPEN.concat(MINE,["deleted"]);const OW=["imp","busyme","subsidy"];Object.keys(R).forEach(k=>{R[k]=R[k].filter(x=>x!=="deleted").concat(OW.filter(x=>x!==k),["deleted"]);});const FIX=["imp","vdone","confirm","dispatch"];FIX.forEach(k=>{R[k]=FIX.filter(x=>x!==k).concat(["deleted"]);});return R;})();
-const MVL={imp:"⭐ Important",busy:"📞 Busy tha (staff)",busyme:"💎 Genuine",subsidy:"🏛 Subsidy wali party",dispatch:"🚚 Machine Dispatch",nophone2:"📵📵 Dobara phone nahi utha",baatnp:"💬📵 Baat chal rahi — phone nahi utha",staff:"🧑 Staff ki party",spare:"🔧 Spare parts",nophone:"📵 Phone nahi utha",baat:"💬 Baat chal rahi",khud:"📝 Khud ki Quotation",vdone:"✅ Visit aa gayi",confirm:"🎉 Order Confirm",deleted:"🗑 Delete"};
+const ROUTES=(()=>{const R={inquiry:OPEN.concat(MINE,["deleted"])};OPEN.forEach(f=>R[f]=OPEN.filter(x=>x!==f).concat(MINE,["deleted"]));R.khud=OPEN.concat(["vdone","confirm","deleted"]);R.vdone=OPEN.concat(["khud","confirm","deleted"]);R.confirm=OPEN.concat(["khud","vdone","deleted"]);R.spare=["deleted"];R.imp=OPEN.concat(MINE,["deleted"]);R.busyme=OPEN.concat(MINE,["deleted"]);R.subsidy=OPEN.concat(MINE,["deleted"]);const OW=["imp","busyme","subsidy"];Object.keys(R).forEach(k=>{R[k]=R[k].filter(x=>x!=="deleted").concat(OW.filter(x=>x!==k),["deleted"]);});const FIX=["imp","vdone","confirm","dispatch"];const ALLF=FOLDERS.map(f=>f[0]).filter(f=>f!=="deleted");ALLF.forEach(k=>{R[k]=ALLF.filter(x=>x!==k).concat(["deleted"]);});return R;})();
+const MVL={inquiry:"📥 Inquiry",imp:"⭐ Important",busy:"📞 Busy tha (staff)",busyme:"💎 Genuine",subsidy:"🏛 Subsidy wali party",dispatch:"🚚 Machine Dispatch",nophone2:"📵📵 Dobara phone nahi utha",baatnp:"💬📵 Baat chal rahi — phone nahi utha",staff:"🧑 Staff ki party",spare:"🔧 Spare parts",nophone:"📵 Phone nahi utha",baat:"💬 Baat chal rahi",khud:"📝 Khud ki Quotation",vdone:"✅ Visit aa gayi",confirm:"🎉 Order Confirm",deleted:"🗑 Delete"};
 const OLDF={later:"baat",tdate:"baat",maine:"baat",kal:"baat",fu10:"baat",fcall:"baat",important:"khud",jaldi:"khud",visit:"khud",kquote:"khud"};
 function qByOf(i){if(i.qBy)return i.qBy;const lq=(i.notes||[]).filter(n=>/Quotation/i.test(n.text||"")).slice(-1)[0];return lq?(/\(Staff\)\s*$|staff/i.test(lq.text||"")?"staff":"owner"):"";}
 function mapOld(i){const f=i.folder;if(f==="kquote"&&i.kqAt&&!i.talkOn){const d=new Date(Number(i.kqAt)),p=n=>String(n).padStart(2,"0");i.talkOn=d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate());}if(f==="quote")return qByOf(i)==="owner"?"khud":"baat";return OLDF[f]||f;}
