@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Paramount CRM v101</title>
+<title>Paramount CRM v102</title>
 <style>
 :root{--bg:#f3f5f9;--card:#fff;--ink:#1b2430;--mute:#6b7685;--line:#e2e7ef;--pri:#123b6b;--acc:#1f8a4c;--warn:#c0392b;--chip:#e8eef6}
 *{box-sizing:border-box}
@@ -51,7 +51,7 @@ label{display:block;font-size:12.5px;color:var(--mute);margin:10px 0 3px}
 </head>
 <body>
 <header>
-  <div class="row"><h1>Paramount CRM <span style="font-size:11px;opacity:.7">v101<span id="szTag"></span></span></h1>
+  <div class="row"><h1>Paramount CRM <span style="font-size:11px;opacity:.7">v102<span id="szTag"></span></span></h1>
     <button id="bSync" title="Sheet se naye enquiry lao">⟳ Sync</button>
     <button id="bMenu">☰</button></div>
   <input id="search" type="search" placeholder="Naam / mobile / 120 BPM water se dhundo...">
@@ -135,7 +135,7 @@ let fby="";
 const fName2=f=>((FOLDERS.find(x=>x[0]===f)||["",f])[1]);
 const isStaffBy=b=>!!(b&&!/owner|aap|maalik|malik/i.test(b));
 function lastBy(i){const lc=(i.calls||[]).slice(-1)[0];return lc?(isStaffBy(lc.by)?"staff":"owner"):"";}
-let tab=(()=>{try{return localStorage.getItem("pt-tab")||"inquiry"}catch(e){return "inquiry"}})(),q="",fsize="",fprod="";
+let tab="inquiry",q="",fsize="",fprod="";
 function fuToday(i){return i.fuDay===today();}
 function inF(i,k){return i.folder===k;}
 const DOC_F=["subsidy","confirm","dispatch"];
@@ -283,8 +283,8 @@ function render(){
   const numQ=qq.replace(/\D/g,"").length>=5;if(qq&&numQ)rows=smartSearch(qq);else if(qq){const ids=new Set(rows.map(x=>x.id));rows=smartSearch(qq).filter(x=>ids.has(x.id));}
   if(OPEN.includes(tab)&&!qq&&!fsize&&!fprod)rows.sort((a,b)=>fuNext(a)-fuNext(b));else if(DATE_F.includes(tab)&&!qq&&!fsize&&!fprod)rows.sort((a,b)=>(tdDue(b)-tdDue(a))||String(a.talkOn||"9").localeCompare(String(b.talkOn||"9")));
   else if((tab==="fud"||tab==="fus")&&!qq)rows.sort((a,b)=>(b.fuLast||0)-(a.fuLast||0));else if(tab==="fu"&&!qq)rows.sort((a,b)=>((b.msgAlert?1:0)-(a.msgAlert?1:0))||(lastFuT(b)-lastFuT(a)));else if(tab==="ph"&&!qq)rows.sort((a,b)=>((b.msgAlert?1:0)-(a.msgAlert?1:0))||(lastCallT(b)-lastCallT(a)));else rows.sort((a,b)=>(b.updated||0)-(a.updated||0));
-  if(tab!=="fu"&&tab!=="ph"&&tab!=="inquiry"&&tab!=="deleted"&&!qq){const nx=i=>(DATE_F.includes(i.folder)&&i.talkOn)?(new Date(i.talkOn+"T00:00:00").getTime()||fuNext(i)):fuNext(i),rk=rkOf;rows.sort((a,b)=>(rk(a)-rk(b))||(rk(a)===2?nx(a)-nx(b):0));}
-  {const k=tab+"|"+qq+"|"+fsize+"|"+fprod;if(window.__ordK===k&&window.__ord&&tab!=="fu"){const pos=new Map(window.__ord.map((id,n)=>[id,n]));const SR=tab!=="inquiry"&&tab!=="deleted"&&tab!=="fu"&&tab!=="ph"&&!qq;const P=x=>(SR?rkOf(x)*1e6:((touchedToday(x)&&tab!=="inquiry")?1e6:0))+(pos.has(x.id)?pos.get(x.id):-1);rows.sort((a,b)=>P(a)-P(b));}window.__ordK=k;window.__ord=rows.map(i=>i.id);}
+  if(tab!=="fu"&&tab!=="ph"&&tab!=="inquiry"&&tab!=="deleted"&&!qq){const nx=i=>(DATE_F.includes(i.folder)&&i.talkOn)?(new Date(i.talkOn+"T00:00:00").getTime()||fuNext(i)):fuNext(i),rk=rk2;rows.sort((a,b)=>(rk(a)-rk(b))||(rk(a)===2?nx(a)-nx(b):0));}
+  {const k=tab+"|"+qq+"|"+fsize+"|"+fprod;if(window.__ordK===k&&window.__ord&&tab!=="fu"){const pos=new Map(window.__ord.map((id,n)=>[id,n]));const SR=tab!=="inquiry"&&tab!=="deleted"&&tab!=="fu"&&tab!=="ph"&&!qq;const P=x=>(SR?rk2(x)*1e6:((touchedToday(x)&&tab!=="inquiry")?1e6:0))+(pos.has(x.id)?pos.get(x.id):-1);rows.sort((a,b)=>P(a)-P(b));}window.__ordK=k;window.__ord=rows.map(i=>i.id);}
   if(!rows.length&&numQ){$("list").innerHTML=`<div class="empty">Ye number kisi folder mein nahi hai.<br><br><button class="p" id="bAddNum" style="font-size:16px;padding:10px 18px">➕ Ye number jodo</button></div>`;$("bAddNum").onclick=()=>{openDetail(null,true);const p=$("dPhone");if(p){p.value=q.trim();}};return;}
   if(!rows.length){$("list").innerHTML=`<div class="empty">${qq?"Kuch nahi mila":(tab==="fud"?"Aapne abhi tak kisi ko follow-up nahi bheja":tab==="fus"?"Staff ne abhi tak kisi ko follow-up nahi bheja":tab==="ph"?"📞 Pichhle 12 ghante mein kisi ko phone nahi kiya.":tab==="fu"?"✅ Aaj koi follow-up baaki nahi.<br><small>\"Phone nahi utha\" har 10 din, \"Baat chal rahi\" aapki tareekh par (ya har 10 din). Khud ki Quotation aur Visit aa gayi apne folder mein hi upar aati hain.</small>":"Is folder mein abhi kuch nahi")}</div>`;return;}
   $("list").innerHTML=rows.map(i=>{
@@ -314,7 +314,7 @@ function render(){
 
       ${i.folder!=="deleted"?`<div class="btns" style="margin-top:6px">${(ROUTES[i.folder]||["deleted"]).map(f=>`<button class="${f==="confirm"?"g":f==="deleted"?"r":""}" data-mv="${i.id}|${f}">${MVL[f]}</button>`).join("")}</div>`:`<div class="btns" style="margin-top:6px"><button data-mv="${i.id}|${i.delFrom&&i.delFrom!=="deleted"?i.delFrom:"inquiry"}">↩ Wapas lao (${esc(fName2(i.delFrom&&i.delFrom!=="deleted"?i.delFrom:"inquiry"))})</button><button class="r" data-px="${i.id}">❌ Hamesha ke liye delete</button></div>`}
       <div>
-      </div></div>`}).join("");
+      </div></div>`}).join("");try{if(tab!=="fu"&&tab!=="ph"&&tab!=="inquiry"&&tab!=="deleted"&&!qq){let pr=-1;$("list").querySelectorAll(".card[data-id]").forEach(c=>{const x=byId(c.dataset.id);if(!x)return;const r=rk2(x)>=2?2:0;if(r!==pr&&r>0){const d=document.createElement("div");d.style.cssText="margin:14px 4px 6px;padding:6px 10px;border-radius:8px;font-weight:700;font-size:14px;"+(r===3?"background:#e8f5e9;color:#1b5e20":"background:#eef2f7;color:#34495e");d.textContent=r===3?"✅ Aaj baat ho gayi — ye apni agli tareekh par upar aayenge":"⏳ Inki tareekh abhi nahi aayi — tareekh ke hisaab se";c.parentNode.insertBefore(d,c);}pr=r;});}}catch(e){}
   document.querySelectorAll("[data-open]").forEach(b=>b.onclick=()=>openDetail(b.dataset.open));
 document.querySelectorAll("[data-qj]").forEach(b=>b.onclick=()=>{openDetail(b.dataset.qj);const f=$("qFile");if(f)f.click();});
 document.querySelectorAll("[data-qd]").forEach(b=>b.onclick=()=>{const[id,k]=b.dataset.qd.split("|"),it=byId(id),q=it&&(it.quotes||[])[Number(k)];if(!q)return;fileBlob(q).then(bl=>{if(!bl){toast("File is phone mein nahi mili");return;}const f=new File([bl],q.name,{type:q.type||"application/pdf"});
@@ -418,6 +418,7 @@ function waNum(p){let d=String(p||"").replace(/\D/g,"");if(d.length===10)d="91"+
 function byId(id){return S.items.find(i=>i.id===id);}
 window.__keep=new Set();
 setInterval(()=>{if(tab==="fu"&&!document.querySelector(".modal.on")){const y=window.scrollY;render();window.scrollTo(0,y);}},20000);
+function rk2(x){const r=rkOf(x);return r===3?2:r;}
 function rkOf(x){const h=(window.__rkHold||{})[x.id];return h!==undefined?h:rankOf(x);}
 function logCall(id){const i=byId(id);if(!i)return;if(tab==="fu")window.__keep.add(id);if(tab!=="fu"&&tab!=="ph"&&(window.__rkHold=window.__rkHold||{})[id]===undefined)window.__rkHold[id]=rankOf(i);try{localStorage.setItem("pt-pending-rec",JSON.stringify({id:id,t:Date.now()}));}catch(e){}(i.calls=i.calls||[]).push({t:new Date().toISOString(),note:"",by:"Aap"});i.isNew=false;i.msgAlert=0;if(tab==="fu"){i.aajClr=Date.now()+2000;window.__aajKeep[i.id]={t:"fu",at:Date.now()};}if(i.talkOn&&i.talkOn<=today())i.talkOn=dPlus(10);
   if(tab==="fu"&&FU_F.includes(i.folder))i.fuHold=Math.max(i.fuHold||0,Date.now()+HOLD);
